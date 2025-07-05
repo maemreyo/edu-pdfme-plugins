@@ -31,9 +31,19 @@ export const uiRender = async (arg: UIRenderProps<FillInTheBlankSchema>) => {
     schema,
     mode: mode === "form" ? "viewer" : mode,
     rootElement,
-    onChange: (changeArg: { key: string; value: unknown }) => {
+    onChange: (changeArg) => {
       if (onChange) {
-        onChange({ key: "text", value: changeArg.value });
+        // Handle both single object and array of objects
+        if (Array.isArray(changeArg)) {
+          // If it's an array, find the relevant text change
+          const textChange = changeArg.find(item => item.key === "content");
+          if (textChange) {
+            onChange({ key: "text", value: textChange.value });
+          }
+        } else {
+          // Handle single object case
+          onChange({ key: "text", value: changeArg.value });
+        }
       }
     },
     ...rest,

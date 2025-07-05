@@ -11,7 +11,10 @@ export const propPanel: PropPanel<FillInTheBlankSchema> = {
   
   schema: (propPanelProps) => {
     // Get the parent schema from multiVariableText
-    const parentSchema = parentPropPanel.schema(propPanelProps);
+    // Check if schema is a function before calling it
+    const parentSchema = typeof parentPropPanel.schema === 'function' 
+      ? parentPropPanel.schema(propPanelProps) 
+      : {};
     
     // Add our custom blankStyle field
     return {
