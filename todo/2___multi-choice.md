@@ -1,151 +1,136 @@
-Tuyệt vời! Sau khi đã có "FillInTheBlank" làm nền tảng, plugin thứ hai tôi sẽ chọn để phát triển là:
+Bạn đã nhận ra một điểm rất quan trọng và tinh tế! Cách tiếp cận "template block" (tổ hợp các schema ở cấp độ ứng dụng) tuy mạnh mẽ về mặt tái sử dụng code, nhưng lại có những hạn chế về **trải nghiệm người dùng thiết kế (designer experience)**. Các phần tử rời rạc, khó quản lý layout và spacing là những vấn đề thực tế.
 
-**Block "Câu hỏi Trắc nghiệm" (MultipleChoiceQuestion).**
+Vậy, câu trả lời là: **CÓ, chúng ta hoàn toàn có thể và nên triển khai nó theo hướng một plugin duy nhất, khép kín (self-contained).**
 
-Lý do đây là lựa chọn số 2 chiến lược:
+Cách tiếp cận này sẽ phức tạp hơn về mặt kỹ thuật ban đầu, nhưng sẽ mang lại một trải nghiệm người dùng vượt trội. Nó sẽ biến "Block Câu hỏi Trắc nghiệm" từ một "tập hợp các viên gạch" thành một "khối bê tông đúc sẵn" vững chắc.
 
-1.  **Giá trị cực lớn cho người dùng:** Đây là dạng câu hỏi phổ biến nhất trong mọi bài kiểm tra. Cung cấp một block tiện lợi cho nó sẽ là một điểm cộng khổng lồ cho Docubrand.
-2.  **Không cần tạo Plugin mới:** Đây là một bước tiến quan trọng. Bạn sẽ không viết một file `plugin/multipleChoiceQuestion/index.ts`. Thay vào đó, bạn sẽ học cách **tổ hợp (compose)** các plugin đã có ở **cấp độ ứng dụng (application-level)**. Điều này rèn luyện một kỹ năng khác: xây dựng các "template" hoặc "preset" thay vì chỉ xây dựng plugin.
-3.  **Tận dụng các plugin cơ sở:** Nó sử dụng một cách hoàn hảo sự kết hợp của `text` và `radioGroup`, cho thấy sức mạnh của việc các plugin có thể hoạt động cùng nhau.
-4.  **Mở đường cho tính năng Premium:** Đây là block lý tưởng để sau này tích hợp tính năng "Tự động Chấm điểm" và "Trộn đề".
+Dưới đây là phân tích chi tiết về cách triển khai **Plugin `multipleChoiceQuestion`** theo hướng này.
 
 ---
 
-### Phân tích Chi tiết Kế hoạch Triển khai Block "MultipleChoiceQuestion"
+### Phân tích Chi tiết Kế hoạch Triển khai Plugin "MultipleChoiceQuestion" (Phiên bản Nâng cao)
 
-Đây không phải là việc tạo một plugin mới, mà là tạo một **chức năng trong giao diện người dùng của Docubrand** để sinh ra một nhóm các schema đã được cấu hình sẵn.
-
-#### 1. Mục tiêu & Trải nghiệm người dùng cuối cùng
+#### 1. Mục tiêu & Trải nghiệm người dùng (Được cải thiện)
 
 *   **Giáo viên (Designer Mode):**
-    *   Trên thanh công cụ của Docubrand, có một nút "Thêm Câu hỏi Trắc nghiệm".
-    *   Khi nhấp vào, một khối hoàn chỉnh sẽ xuất hiện trên trang, bao gồm:
-        *   Một ô để nhập đề bài.
-        *   Bốn lựa chọn (A, B, C, D), mỗi lựa chọn có một nút radio và một ô để nhập nội dung.
-    *   Giáo viên chỉ cần click vào các ô text và chỉnh sửa nội dung.
-    *   Toàn bộ khối này có thể được di chuyển, thay đổi kích thước như một thể thống nhất.
-*   **Học sinh (Form Mode):**
-    *   Nhìn thấy câu hỏi và các lựa chọn.
-    *   Nhấp vào một trong các nút radio để chọn đáp án. Chỉ một đáp án được chọn tại một thời điểm.
+    *   Kéo một plugin `multipleChoiceQuestion` duy nhất vào trang.
+    *   Toàn bộ câu hỏi (đề bài + các lựa chọn) nằm trong một khối duy nhất, có một khung bao chung.
+    *   **Chỉnh sửa nội dung:** Nhấp vào đề bài để sửa đề bài. Nhấp vào nội dung lựa chọn để sửa nội dung lựa chọn.
+    *   **Quản lý lựa chọn:** Trong `propPanel`, có các nút `+`/`-` để thêm/bớt các lựa chọn một cách dễ dàng.
+    *   **Tự động Layout:** Khi thêm/bớt lựa chọn, hoặc khi nội dung của một lựa chọn quá dài và xuống dòng, toàn bộ khối sẽ **tự động điều chỉnh chiều cao**. Spacing giữa các lựa chọn luôn được giữ đều nhau một cách tự động.
+    *   **Chỉnh sửa đáp án đúng:** Trong `propPanel`, có một dropdown hoặc một nhóm radio để chọn đâu là đáp án đúng.
 
-#### 2. Cấu trúc Dữ liệu: Một "Nhóm Schema"
+#### 2. Cấu trúc File và Schema (Hoàn toàn mới)
 
-Khi người dùng "Thêm Câu hỏi Trắc nghiệm", logic trong ứng dụng của bạn sẽ tạo ra một mảng các đối tượng schema và thêm chúng vào template.
+1.  **Tạo file mới:** `plugin/multipleChoiceQuestion/index.ts` (và các file helper).
+2.  **Định nghĩa Schema:** Schema bây giờ sẽ chứa toàn bộ thông tin của câu hỏi trong một đối tượng duy nhất.
 
-*   **Kỹ thuật:** Sử dụng chức năng **Grouping** của `pdfme`. Bạn sẽ tạo ra một `groupId` duy nhất cho mỗi câu hỏi.
-*   **Cấu trúc Schema JSON (ví dụ cho một câu hỏi):**
+    ```typescript
+    // trong file types.ts của plugin mới
+    import { Schema } from '@pdfme/common';
+    import { TextSchema } from '../text/types.js'; // Kế thừa style từ text
 
-```json
-[
-  // 1. Đề bài
-  {
-    "id": "question_text_1",
-    "type": "text",
-    "position": { "x": 10, "y": 20 },
-    "width": 180, "height": 20,
-    "content": "Câu hỏi 1: Trái Đất có hình gì?",
-    "groupId": "question_group_1"
-  },
+    // Định nghĩa một lựa chọn
+    interface Choice {
+      id: string;
+      text: string;
+    }
 
-  // 2. Lựa chọn A
-  {
-    "id": "radio_A_1",
-    "type": "radioGroup",
-    "position": { "x": 15, "y": 45 },
-    "width": 8, "height": 8,
-    "group": "answer_for_q1", // Rất quan trọng: Cùng group để loại trừ nhau
-    "groupId": "question_group_1"
-  },
-  {
-    "id": "text_A_1",
-    "type": "text",
-    "position": { "x": 25, "y": 45 },
-    "width": 165, "height": 8,
-    "content": "A. Hình vuông",
-    "verticalAlignment": "middle",
-    "groupId": "question_group_1"
-  },
+    // Schema chính
+    export interface MultipleChoiceQuestionSchema extends Schema {
+      // Dữ liệu
+      question: string;
+      choices: Choice[];
+      correctAnswerId: string; // Lưu ID của lựa chọn đúng
 
-  // 3. Lựa chọn B
-  {
-    "id": "radio_B_1",
-    "type": "radioGroup",
-    "position": { "x": 15, "y": 55 },
-    "width": 8, "height": 8,
-    "group": "answer_for_q1", // Cùng group
-    "groupId": "question_group_1"
-  },
-  {
-    "id": "text_B_1",
-    "type": "text",
-    "position": { "x": 25, "y": 55 },
-    "width": 165, "height": 8,
-    "content": "B. Hình cầu",
-    "verticalAlignment": "middle",
-    "groupId": "question_group_1"
-  },
+      // Thuộc tính style
+      questionStyle: Partial<TextSchema>; // Style cho đề bài
+      choiceStyle: Partial<TextSchema>;   // Style chung cho các lựa chọn
+      layout: {
+        choiceSpacing: number; // Khoảng cách giữa các lựa chọn (mm)
+        // có thể thêm các layout khác như 'vertical', 'horizontal'
+      };
+    }
+    ```
+    *   **`content`**: Thuộc tính này sẽ lưu `id` của lựa chọn mà học sinh đã chọn.
 
-  // ... Tương tự cho C và D
-]
-```
+#### 3. Triển khai `ui` function (Logic Layout Tùy chỉnh)
 
-#### 3. Triển khai Logic trong Giao diện Docubrand
+Đây là phần phức tạp nhất và là nơi bạn tạo ra giá trị lớn nhất. Plugin sẽ tự quản lý layout của các phần tử con bên trong nó.
 
-Đây là phần code bạn sẽ viết trong ứng dụng của mình, không phải trong thư mục plugin.
+1.  **Cấu trúc DOM:** `rootElement` sẽ chứa các `div` con được tạo và định vị bằng code.
+    *   `questionDiv`: Một `div` cho đề bài.
+    *   `choicesContainer`: Một `div` chứa tất cả các lựa chọn.
+    *   Mỗi lựa chọn trong `choicesContainer` là một `div` (`choiceRow`) chứa:
+        *   `radioDiv`: `div` để vẽ icon radio.
+        *   `textDiv`: `div` để hiển thị nội dung lựa chọn.
 
-1.  **Tạo nút "Thêm Câu hỏi Trắc nghiệm":**
-    *   Trong UI của bạn (ví dụ, một sidebar React/Vue/Svelte), tạo một button.
-    *   **Event:** `click`.
+2.  **Luồng Render:**
+    *   **Bước 1: Render Đề bài:**
+        *   Tạo `questionDiv`.
+        *   **Kỹ thuật:** Gọi `text.ui` để render `schema.question` vào `questionDiv`. Truyền các style từ `schema.questionStyle`.
+        *   `questionDiv` sẽ tự động tính toán chiều cao của nó.
 
-2.  **Xử lý sự kiện `click`:**
-    *   **Hàm `createMultipleChoiceBlock(position)`:** Viết một hàm nhận vị trí (x, y) nơi người dùng muốn thêm block.
-    *   **Bên trong hàm:**
-        1.  **Tạo ID duy nhất:** Tạo các ID ngẫu nhiên và duy nhất cho `groupId`, `group` của radio, và `id` của từng schema con. Ví dụ: `const groupId = \`qg_${Date.now()}\`;`, `const radioGroupName = \`ans_for_${groupId}\`;`.
-        2.  **Xây dựng mảng Schema:** Tạo một mảng các đối tượng schema như cấu trúc JSON ở trên. Vị trí của các schema con (`radio`, `text` cho lựa chọn) sẽ được tính toán tương đối so với `position` đầu vào.
-        3.  **Gọi API của `pdfme`:** Sử dụng API mà `pdfme` cung cấp để thêm schema vào template. Giả sử bạn đang dùng `@pdfme/ui`, nó có thể là một hàm như `designer.updateTemplate({ ...designer.getTemplate(), schemas: [...designer.getTemplate().schemas, ...newSchemas] })`.
+    *   **Bước 2: Render các Lựa chọn:**
+        *   Lặp qua mảng `schema.choices`.
+        *   Trong mỗi vòng lặp, tạo một `div` `choiceRow`.
+        *   **Bên trong `choiceRow`:**
+            *   Tạo `radioDiv`. Gọi `radioGroup.ui` (hoặc chỉ `svg.ui` nếu bạn muốn tự quản lý logic chọn) để vẽ icon radio. `value` của radio sẽ là `schema.content === choice.id`.
+            *   Tạo `textDiv`. Gọi `text.ui` để render `choice.text` vào `textDiv`.
+        *   **Kỹ thuật Layout:**
+            *   Sử dụng `flexbox` cho `choiceRow` để căn chỉnh `radioDiv` và `textDiv` thẳng hàng.
+            *   Vị trí `top` của mỗi `choiceRow` được tính toán dựa trên chiều cao của `questionDiv` và chiều cao của các `choiceRow` trước đó, cộng với `schema.layout.choiceSpacing`.
 
-#### 4. Kỹ thuật Tái sử dụng từ các Base Plugin
+    *   **Bước 3: Tự động điều chỉnh chiều cao:**
+        *   Sau khi render tất cả các phần tử con, bạn tính toán tổng chiều cao cần thiết.
+        *   Nếu tổng chiều cao này khác với `schema.height`, bạn sẽ gọi `onChange({ key: 'height', value: newHeight })`. `pdfme` sẽ tự động cập nhật kích thước của plugin.
 
-Đây là phần quan trọng nhất, cho thấy bạn không cần phát minh lại gì cả.
+3.  **Xử lý Sự kiện:**
+    *   **Sửa đề bài/lựa chọn:** Gắn listener `blur` vào các `div` `contentEditable` của đề bài và lựa chọn. Khi `blur`, cập nhật lại `schema.question` hoặc mảng `schema.choices` và gọi `onChange`.
+    *   **Chọn đáp án (Form Mode):** Gắn listener `click` vào mỗi `choiceRow`. Khi được click, cập nhật `schema.content = choice.id` và gọi `onChange`. Việc này sẽ kích hoạt render lại, và icon radio sẽ tự động cập nhật.
 
-*   **Plugin `text`:**
-    *   **Tận dụng:** Được dùng để hiển thị đề bài và nội dung các lựa chọn.
-    *   **Lợi ích:** Giáo viên có thể sử dụng tất cả các tính năng định dạng của nó: bôi đậm từ khóa, thay đổi font chữ, kích thước, màu sắc để làm nổi bật câu hỏi.
-    *   **Kỹ thuật liên quan:** `uiRender` và `pdfRender` của `text` sẽ xử lý toàn bộ việc hiển thị và in ấn.
+#### 4. Triển khai `pdf` function (Render Tùy chỉnh)
 
-*   **Plugin `radioGroup`:**
-    *   **Tận dụng:** Là trái tim của chức năng lựa chọn.
-    *   **Lợi ích:** Logic phức tạp của việc đảm bảo chỉ một lựa chọn được chọn đã được xử lý hoàn toàn bên trong plugin này.
-    *   **Kỹ thuật liên quan:**
-        *   **Event Bus:** Cơ chế `EventTarget` toàn cục sẽ tự động hoạt động khi các `radioGroup` có cùng `schema.group` được render. Bạn không cần làm gì thêm.
-        -   **Ủy thác cho `svg`:** Việc hiển thị icon tròn (checked/unchecked) đã được `radioGroup` xử lý bằng cách gọi `svg.ui` và `svg.pdf`.
+Logic tương tự như `ui`, nhưng sử dụng các lệnh vẽ của `pdf-lib`.
 
-*   **Plugin `svg` (gián tiếp):**
-    *   **Tận dụng:** Được `radioGroup` sử dụng để vẽ các icon.
-    *   **Lợi ích:** Bạn có được các icon vector sắc nét trên cả UI và PDF mà không cần quan tâm đến chi tiết triển khai.
+1.  **Vẽ Đề bài:**
+    *   **Kỹ thuật:** Gọi `text.pdf` để vẽ `schema.question` tại vị trí đầu tiên.
+2.  **Vẽ các Lựa chọn:**
+    *   Lặp qua `schema.choices`.
+    *   Trong mỗi vòng lặp:
+        *   Tính toán vị trí `y` cho hàng lựa chọn hiện tại.
+        *   Gọi `radioGroup.pdf` (hoặc `svg.pdf`) để vẽ icon radio.
+        *   Gọi `text.pdf` để vẽ nội dung lựa chọn.
+3.  **Tái sử dụng:** Toàn bộ logic phức tạp của việc vẽ văn bản và icon được ủy thác cho các plugin cơ sở. Nhiệm vụ chính của bạn là **tính toán đúng vị trí** cho mỗi lần gọi đó.
 
-#### 5. Lộ trình Mở rộng trong Tương lai (Hướng tới Premium)
+#### 5. Triển khai `propPanel`
 
-Sau khi có block này, bạn đã có một nền tảng vững chắc.
+`propPanel` giờ đây sẽ rất mạnh mẽ và tập trung.
 
-1.  **Thêm trường "Đáp án" vào `propPanel`:**
-    *   Bạn sẽ cần tạo một **custom plugin wrapper** cho `radioGroup`, ví dụ `answerableRadioGroup`.
-    *   Plugin này sẽ kế thừa `radioGroup` nhưng thêm một trường `isCorrectAnswer: boolean` vào schema.
-    *   `propPanel` của nó sẽ có một checkbox "Đây là đáp án đúng".
-    *   Khi giáo viên check vào đó, `isCorrectAnswer` sẽ được đặt là `true`.
-2.  **Tích hợp Logic Chấm điểm:**
-    *   Hệ thống Docubrand của bạn giờ đây có thể đọc template, tìm các schema `answerableRadioGroup`, và biết được đâu là đáp án đúng (`isCorrectAnswer === true`) và đâu là lựa chọn của học sinh (`content === 'true'`).
-    *   Từ đó, việc so sánh và chấm điểm trở nên khả thi.
+1.  **Quản lý Lựa chọn:**
+    *   **Kỹ thuật:** Tạo một widget tùy chỉnh `ChoiceManager`.
+    *   **Giao diện:** Widget này sẽ hiển thị một danh sách các lựa chọn hiện có. Mỗi lựa chọn có một ô input để sửa text và một nút `-` để xóa. Có một nút `+` ở cuối để thêm lựa chọn mới.
+    *   **Logic:** Khi người dùng thêm/sửa/xóa, widget sẽ cập nhật trực tiếp mảng `schema.choices` và gọi `onChange`.
 
-### Tổng kết Lộ trình và Kỹ thuật
+2.  **Chọn Đáp án đúng:**
+    *   Tạo một widget `select` (dropdown).
+    *   `options` của dropdown này sẽ được tạo động từ `schema.choices` (`choices.map(c => ({ label: c.text, value: c.id }))`).
+    *   Khi người dùng chọn một đáp án, nó sẽ cập nhật `schema.correctAnswerId`.
 
-| Bước | Nhiệm vụ | Kỹ thuật/Plugin Tái sử dụng | Ghi chú |
-| :--- | :--- | :--- | :--- |
-| **1. UI** | Tạo nút "Thêm Câu hỏi Trắc nghiệm" | - | Logic nằm trong ứng dụng Docubrand |
-| **2. Logic** | Viết hàm `createMultipleChoiceBlock` | - | Tạo một mảng các schema JSON |
-| **3. Cấu hình** | Đặt `groupId` cho tất cả schema con | Grouping của `pdfme` | Để di chuyển/thao tác như một khối |
-| **4. Cấu hình** | Đặt `group` giống nhau cho các radio | `radioGroup` plugin | Để kích hoạt cơ chế loại trừ lẫn nhau |
-| **5. Hiển thị** | Hiển thị đề bài và lựa chọn | `text` plugin | Tận dụng khả năng định dạng văn bản |
-| **6. Tương tác** | Xử lý việc chọn đáp án | `radioGroup` plugin | Tận dụng Event Bus và logic toggle |
+3.  **Tùy chọn Layout & Style:**
+    *   Cung cấp các `inputNumber` cho `choiceSpacing`.
+    *   Cung cấp các `Card` chứa các `PropPanelSchema` của `text` để người dùng tùy chỉnh `questionStyle` và `choiceStyle`.
 
-Bằng cách tiếp cận này, bạn tạo ra một tính năng cực kỳ mạnh mẽ và tiện lợi cho người dùng mà **không cần viết một dòng code plugin mới nào**. Thay vào đó, bạn học được cách **sử dụng `pdfme` như một bộ công cụ (SDK)**, kết hợp các "viên gạch" đã có để xây dựng nên những "cấu trúc" phức tạp hơn. Đây là một kỹ năng quan trọng để xây dựng các ứng dụng lớn dựa trên `pdfme`.
+### So sánh hai cách tiếp cận
+
+| Tiêu chí | Cách 1: Template Block (Tổ hợp) | Cách 2: Plugin Khép kín (Nâng cao) |
+| :--- | :--- | :--- |
+| **Trải nghiệm Designer** | Rời rạc, khó chỉnh layout, phải di chuyển nhiều phần tử. | **Vượt trội.** Một khối duy nhất, layout tự động, quản lý tập trung. |
+| **Độ phức tạp triển khai** | **Dễ.** Chỉ cần viết logic tạo mảng schema ở cấp ứng dụng. | **Khó.** Đòi hỏi viết code render UI/PDF tùy chỉnh, quản lý layout. |
+| **Tính đóng gói** | Thấp. Logic nằm rải rác trong ứng dụng. | **Cao.** Toàn bộ logic nằm trong một plugin duy nhất, dễ dàng chia sẻ, tái sử dụng. |
+| **Khả năng bảo trì** | Khó hơn khi cần thay đổi layout chung. | Dễ hơn. Chỉ cần sửa trong code của plugin. |
+| **Kết quả** | Hoạt động tốt, nhưng có thể hơi "vụng về" khi thiết kế. | **Chuyên nghiệp.** Mang lại trải nghiệm mượt mà, liền mạch. |
+
+**Kết luận:**
+
+Cách tiếp cận "Plugin Khép kín" này chắc chắn là hướng đi đúng đắn để xây dựng một sản phẩm chuyên nghiệp như Docubrand. Mặc dù đòi hỏi đầu tư kỹ thuật ban đầu lớn hơn, nó sẽ trả lại bằng một trải nghiệm người dùng tốt hơn rất nhiều và một nền tảng vững chắc, dễ dàng mở rộng và bảo trì trong tương lai. Nó biến một "tính năng" thành một **"thành phần" (component)** thực sự của hệ thống.
