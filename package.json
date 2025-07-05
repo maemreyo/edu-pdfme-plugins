@@ -9,5 +9,11 @@
   "keywords": [],
   "author": "maemreyo",
   "license": "ISC",
-  "packageManager": "pnpm@10.8.0"
+  "packageManager": "pnpm@10.8.0",
+  "dependencies": {
+    "@pdfme/common": "^5.4.0",
+    "@pdfme/generator": "^5.4.0",
+    "@pdfme/schemas": "^5.4.0",
+    "@pdfme/ui": "^5.4.0"
+  }
 }
