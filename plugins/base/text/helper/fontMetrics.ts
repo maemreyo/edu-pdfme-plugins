@@ -63,7 +63,8 @@ function generateCacheKey(fontName: string, fontData?: ArrayBuffer | string): st
  */
 function estimateCacheEntrySize(fontKitFont: FontKitFont, metrics: FontMetrics): number {
   // Rough estimation: font object + metrics + overhead
-  const fontObjectSize = fontKitFont.data.byteLength || 100000; // Use byteLength for ArrayBuffer
+  // Estimate font size - fontkit Font doesn't expose data directly
+  const fontObjectSize = 100000; // Default size estimate
   const metricsSize = JSON.stringify(metrics).length * 2; // UTF-16 encoding
   const overhead = 1000; // Object overhead
   
@@ -166,7 +167,9 @@ export async function getFontKitFont(
 
     // Load font with FontKit (assuming fontkit is available)
     const fontkit = await import('fontkit');
-    const font = fontkit.create(buffer) as FontKitFont;
+    // Convert ArrayBuffer to Buffer for fontkit
+    const bufferData = Buffer.from(buffer);
+    const font = fontkit.create(bufferData) as FontKitFont;
     
     // Validate loaded font
     if (!font) {
@@ -472,7 +475,8 @@ export function replaceUnsupportedChars(
         const glyphId = fontKitFont.glyphForCodePoint(char.codePointAt(0) || 0);
         
         // If no glyph found (glyphId 0 is typically .notdef), replace
-        return glyphId === 0 ? replacement : char;
+        // Check if the glyph is the .notdef glyph or missing
+        return (!glyphId || glyphId === null) ? replacement : char;
       })
       .join('');
 

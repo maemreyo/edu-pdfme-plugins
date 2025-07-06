@@ -24,7 +24,7 @@ export type DynamicFontSizeFit = 'horizontal' | 'vertical';
 /**
  * Algorithm types for dynamic font size calculation
  */
-export type DynamicFontSizeAlgorithm = 'binary' | 'linear' | 'iterative';
+export type DynamicFontSizeAlgorithm = 'binary' | 'linear' | 'iterative' | 'binarySearch' | 'linearApproximation';
 
 /**
  * Browser compatibility mode for content editable handling
@@ -100,6 +100,8 @@ export interface LineWrappingConfig {
   locale?: string;
   /** Enable Japanese Kinsoku Shori rules */
   enableJapaneseRules: boolean;
+  /** Japanese-specific rules */
+  japaneseRules?: boolean;
   /** Enable hyphenation (future feature) */
   enableHyphenation?: boolean;
   /** Custom character sets for line breaking rules */
@@ -109,6 +111,8 @@ export interface LineWrappingConfig {
     /** Characters that cannot end a line */
     endForbidden?: string[];
   };
+  /** Custom break characters */
+  customBreakChars?: string[];
 }
 
 /**
@@ -167,6 +171,10 @@ export interface DynamicFontSizeResult {
     calculationTime: number;
     /** Whether result was cached */
     wasCached: boolean;
+    /** Algorithm used for calculation */
+    algorithm?: string;
+    /** Error message if calculation failed */
+    error?: string;
   };
 }
 
@@ -348,4 +356,48 @@ export class LineWrappingError extends TextPluginError {
       originalError 
     });
   }
+}
+
+/**
+ * Result of text validation
+ */
+export interface TextValidationResult {
+  /** Whether the text is valid */
+  isValid: boolean;
+  /** List of validation errors */
+  errors: string[];
+  /** List of validation warnings */
+  warnings: string[];
+  /** Sanitized text if needed */
+  sanitizedText?: string;
+  /** Original error if validation failed */
+  originalError?: string;
+  /** List of unsupported characters */
+  unsupportedChars?: string[];
+  /** List of corrections applied */
+  corrections?: string[];
+}
+
+/**
+ * Text content analysis results
+ */
+export interface TextContentAnalysis {
+  /** Total character count */
+  characterCount: number;
+  /** Word count (approximate) */
+  wordCount: number;
+  /** Line count (approximate) */
+  lineCount: number;
+  /** Detected primary language */
+  primaryLanguage: string;
+  /** Contains complex scripts requiring special handling */
+  hasComplexScripts: boolean;
+  /** Contains unsupported characters */
+  hasUnsupportedChars: boolean;
+  /** Percentage of supported characters */
+  supportedCharPercentage: number;
+  /** Estimated rendering complexity (1-10) */
+  complexityScore: number;
+  /** Contains Japanese characters */
+  hasJapanese: boolean;
 }

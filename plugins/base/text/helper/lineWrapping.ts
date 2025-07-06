@@ -20,9 +20,21 @@ import type {
   LineWrappingGranularity,
 } from '../types';
 
+// Japanese typography rule constants
+const LINE_START_FORBIDDEN_CHARS = [
+  ')', '）', ']', '］', '}', '｝', '〉', '》', '」', '』', '〕', '〗', '〙', '〛',
+  ',', '，', '、', '.', '．', '。', '?', '？', '!', '！', ':', '：', ';', '；',
+  'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ', 'っ', 'ゃ', 'ゅ', 'ょ', 'ゎ', 'ゕ', 'ゖ',
+  'ァ', 'ィ', 'ゥ', 'ェ', 'ォ', 'ッ', 'ャ', 'ュ', 'ョ', 'ヮ', 'ヵ', 'ヶ', '・', '：', '；', '゠', '％', '‰', '°', '℃', '、', '。', '，', '．', '・', '：', '；', '？', '！', '゛', '゜', '´', '｀', '¨', '＾', '￣', '＿', '―', '‐', '／', '＼', '～', '∥', '｜', '…', '‥', '\'', '\'', '"', '"', '（', '）', '〔', '〕', '［', '］', '｛', '｝', '〈', '〉', '《', '》', '「', '」', '『', '』', '【', '】', '＋', '－', '±', '×', '÷', '＝', '≠', '＜', '＞', '≦', '≧', '∞', '∴', '♂', '♀', '°', '′', '″', '℃', '￥', '＄', '￠', '￡', '％', '＃', '＆', '＊', '＠', '§', '☆', '★', '○', '●', '◎', '◇', '◆', '□', '■', '△', '▲', '▽', '▼', '※', '〒', '→', '←', '↑', '↓', '〓'
+];
+
+const LINE_END_FORBIDDEN_CHARS = [
+  '(', '（', '[', '［', '{', '｛', '〈', '《', '「', '『', '〔', '〖', '〘', '〚',
+  '¥', '￥', '$', '＄', '€', '£', '₩', 'No.', 'no.', 'Mr.', 'Mrs.', 'Dr.',
+  '第', '約', '計', '総', '全'
+];
+
 import {
-  LINE_START_FORBIDDEN_CHARS,
-  LINE_END_FORBIDDEN_CHARS,
   DEFAULT_LINE_WRAPPING_CONFIG,
 } from '../constants';
 
@@ -328,7 +340,7 @@ function filterStartJP(lines: string[]): string[] {
 
     const charAtStart = line.charAt(0);
     
-    if (LINE_START_FORBIDDEN_CHARS.includes(charAtStart)) {
+    if (LINE_START_FORBIDDEN_CHARS.indexOf(charAtStart) !== -1) {
       if (line.trim().length === 1) {
         // Single forbidden character - keep as is
         filtered.push(line);
@@ -379,7 +391,7 @@ function filterEndJP(lines: string[]): string[] {
 
     const charAtEnd = line.slice(-1);
 
-    if (LINE_END_FORBIDDEN_CHARS.includes(charAtEnd)) {
+    if (LINE_END_FORBIDDEN_CHARS.indexOf(charAtEnd) !== -1) {
       if (line.trim().length === 1) {
         // Single forbidden character - keep as is
         filtered.push(line);
@@ -670,6 +682,9 @@ function createEmptyResult(startTime: number): { lines: string[]; japaneseRulesA
 /**
  * Check if text contains Japanese characters
  */
+// Japanese character regex
+const JAPANESE_CHAR_REGEX = /[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u3400-\u4DBF]/;
+
 export function containsJapanese(text: string): boolean {
   return JAPANESE_CHAR_REGEX.test(text);
 }

@@ -38,6 +38,17 @@ const MAX_TEXT_LENGTH = 10000; // Example limit
 const MAX_LINE_COUNT = 500; // Example limit
 const MAX_WORD_COUNT = 2000; // Example limit
 const CONTROL_CHAR_PATTERN = /[\x00-\x1F\x7F-\x9F]/g; // ASCII control characters
+
+// Regex patterns for language detection
+const REGEX_PATTERNS = {
+  JAPANESE: /[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u3400-\u4DBF]/,
+  KOREAN: /[\uAC00-\uD7AF]/,
+  CHINESE: /[\u4E00-\u9FFF]/,
+  ARABIC: /[\u0600-\u06FF]/,
+  HEBREW: /[\u0590-\u05FF]/,
+  THAI: /[\u0E00-\u0E7F]/,
+  DEVANAGARI: /[\u0900-\u097F]/
+};
 const EMOJI_PATTERN = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu;
 const FONT_SIZE_RANGE = { min: 1, max: 500 };
 
@@ -143,7 +154,7 @@ export async function validateText(
       } catch (error) {
         errors.push(formatMessage(ERROR_MESSAGES.FONT_LOAD_FAILED, {
       fontName: schema.fontName || 'Unknown',
-      originalError: error.message,
+      originalError: error instanceof Error ? error.message : String(error),
     }));
       }
     }
@@ -233,6 +244,9 @@ export function analyzeTextContent(text: string): TextContentAnalysis {
     const hasJapanese = JAPANESE_CHAR_REGEX.test(text);
     const hasComplexScript = detectComplexScript(text);
 
+    // For analysis, we don't check unsupported characters (would need font)
+    const unsupportedCharsList: string[] = [];
+
     // Complexity scoring
     const complexityScore = calculateComplexityScore(text);
 
@@ -241,8 +255,11 @@ export function analyzeTextContent(text: string): TextContentAnalysis {
       wordCount,
       lineCount,
       hasJapanese,
-      hasComplexScript,
+      hasComplexScripts: hasComplexScript,
       complexityScore,
+      primaryLanguage: detectPrimaryLanguage(text),
+      hasUnsupportedChars: unsupportedCharsList.length > 0,
+      supportedCharPercentage: calculateSupportedCharPercentage(text, unsupportedCharsList)
     };
 
     // Cache result
@@ -258,10 +275,52 @@ export function analyzeTextContent(text: string): TextContentAnalysis {
       wordCount: 0,
       lineCount: 1,
       hasJapanese: false,
-      hasComplexScript: false,
+      hasComplexScripts: false,
       complexityScore: 0,
+      primaryLanguage: 'unknown',
+      hasUnsupportedChars: false,
+      supportedCharPercentage: 100
     };
   }
+}
+
+// Helper function to detect primary language
+function detectPrimaryLanguage(text: string): string {
+  if (REGEX_PATTERNS.JAPANESE.test(text)) return 'ja';
+  if (REGEX_PATTERNS.KOREAN.test(text)) return 'ko';
+  if (REGEX_PATTERNS.CHINESE.test(text)) return 'zh';
+  if (REGEX_PATTERNS.ARABIC.test(text)) return 'ar';
+  if (REGEX_PATTERNS.HEBREW.test(text)) return 'he';
+  if (REGEX_PATTERNS.THAI.test(text)) return 'th';
+  if (REGEX_PATTERNS.DEVANAGARI.test(text)) return 'hi';
+  return 'en'; // Default to English
+}
+
+// Helper function to find unsupported characters in a font
+function findUnsupportedChars(text: string, fontKitFont: FontKitFont): string[] {
+  if (!text || !fontKitFont) return [];
+  
+  const unsupported: string[] = [];
+  for (const char of text) {
+    const codePoint = char.codePointAt(0) || 0;
+    const glyphId = fontKitFont.glyphForCodePoint(codePoint);
+    
+    // If glyph is missing or is .notdef
+    if (!glyphId) {
+      unsupported.push(char);
+    }
+  }
+  
+  return unsupported;
+}
+
+// Helper function to calculate supported character percentage
+function calculateSupportedCharPercentage(text: string, unsupportedChars: string[]): number {
+  if (!text || text.length === 0) return 100;
+  if (!unsupportedChars || unsupportedChars.length === 0) return 100;
+  
+  const uniqueUnsupportedChars = new Set(unsupportedChars);
+  return 100 - (uniqueUnsupportedChars.size / text.length) * 100;
 }
 
 // =============================================================================
@@ -448,7 +507,7 @@ function validatePerformance(text: string, schema: TextSchema): {
   }
 
   // Complex script warning
-  if (analysis.hasComplexScript) {
+  if (analysis.hasComplexScripts) {
     warnings.push(WARNING_MESSAGES.COMPLEX_SCRIPT_WARNING);
     recommendations.push('Complex scripts may require additional processing time');
   }
@@ -502,7 +561,7 @@ function validateSecurity(text: string): SecurityScanResult {
   }
 
   // Check for excessive Unicode variations
-  const unicodeVariations = text.match(/[\uFE00-\uFE0F\uDB40\uDC20-\uDB40\uDC7F]/g);
+  const unicodeVariations = text.match(/[\uFE00-\uFE0F]/g) || text.match(/[\uDB40][\uDC20-\uDC7F]/g);
   if (unicodeVariations && unicodeVariations.length > 10) {
     threats.push({
       type: 'unicode_variation',

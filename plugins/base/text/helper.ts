@@ -276,8 +276,7 @@ export async function processTextComplete(
       fontKitFont,
       finalFontSize,
       schema.lineHeight,
-      schema.verticalAlignment,
-      detectBrowserMode()
+      schema.verticalAlignment
     );
 
     // Step 6: Update performance tracking

@@ -11,7 +11,13 @@ import {
   DEFAULT_FONT_COLOR,
   PLACEHOLDER_FONT_COLOR,
 } from "./constants";
-import { calculateDynamicFontSize, getFontKitFont, getBrowserVerticalFontAdjustments, detectBrowserMode, needsFirefoxWorkarounds } from './helper';
+import {
+  calculateDynamicFontSize,
+  getFontKitFont,
+  getBrowserVerticalFontAdjustments,
+  detectBrowserMode,
+  needsFirefoxWorkarounds,
+} from "./helper";
 import { isEditable } from "../../utils";
 
 const replaceUnsupportedChars = (
@@ -76,11 +82,9 @@ export const uiRender = async (arg: UIRenderProps<TextSchema>) => {
   };
   const font = options?.font || getDefaultFont();
   const fontKitFont = await getFontKitFont(
-    schema.fontName,
-    font,
-    _cache as Map<string, import("fontkit").Font>
+    font[schema.fontName || 'Helvetica'].data
   );
-  const textBlock = buildStyledTextContainer(
+  const textBlock = await buildStyledTextContainer(
     arg,
     fontKitFont,
     usePlaceholder ? placeholder : value
@@ -117,15 +121,20 @@ export const uiRender = async (arg: UIRenderProps<TextSchema>) => {
     textBlock.addEventListener("keyup", () => {
       setTimeout(() => {
         // Use a regular function instead of an async one since we don't need await
-        (() => {
+        (async () => {
           if (!textBlock.textContent) return;
-          dynamicFontSize = (await calculateDynamicFontSize({
-            textSchema: schema,
-            fontKitFont,
-            value: getText(textBlock),
-            startingFontSize: dynamicFontSize,
-            containerDimensions: { width: textBlock.offsetWidth, height: textBlock.offsetHeight },
-          })).fontSize;
+          dynamicFontSize = (
+            await calculateDynamicFontSize({
+              textSchema: schema,
+              fontKitFont,
+              value: getText(textBlock),
+              startingFontSize: dynamicFontSize,
+              containerDimensions: {
+                width: textBlock.offsetWidth,
+                height: textBlock.offsetHeight,
+              },
+            })
+          ).fontSize;
           textBlock.style.fontSize = `${dynamicFontSize}pt`;
 
           const { topAdj: newTopAdj, bottomAdj: newBottomAdj } =
@@ -168,7 +177,7 @@ export const uiRender = async (arg: UIRenderProps<TextSchema>) => {
   }
 };
 
-export const buildStyledTextContainer = (
+export const buildStyledTextContainer = async (
   arg: UIRenderProps<TextSchema>,
   fontKitFont: FontKitFont,
   value: string
@@ -178,14 +187,17 @@ export const buildStyledTextContainer = (
   let dynamicFontSize: undefined | number = undefined;
 
   if (schema.dynamicFontSize && value) {
-    dynamicFontSize = await calculateDynamicFontSize({
+    const result = await calculateDynamicFontSize({
       textSchema: schema,
       fontKitFont,
       value,
       startingFontSize: dynamicFontSize,
-      containerWidth: rootElement.offsetWidth,
-      containerHeight: rootElement.offsetHeight,
+      containerDimensions: {
+        width: rootElement.offsetWidth,
+        height: rootElement.offsetHeight,
+      },
     });
+    dynamicFontSize = result.fontSize;
   }
 
   // Depending on vertical alignment, we need to move the top or bottom of the font to keep

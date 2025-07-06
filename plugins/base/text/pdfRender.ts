@@ -94,13 +94,20 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
 
   const { font = getDefaultFont(), colorType } = options;
 
+  // Get the layout properties from the schema
+  const { width, height } = convertForPdfLayoutProps({
+    schema,
+    pageHeight: page.getHeight(),
+    applyRotateTranslate: false,
+  });
+
   const [pdfFontObj, fontKitFont] = await Promise.all([
     embedAndGetFontObj({
       pdfDoc,
       font,
       _cache: _cache as unknown as Map<PDFDocument, { [key: string]: PDFFont }>,
     }),
-    getFontKitFont(schema.fontName, font, _cache as Map<string, FontKitFont>),
+    getFontKitFont(font[schema.fontName || 'Helvetica'].data),
   ]);
   const fontProp = await getFontProp({ value, fontKitFont, schema, colorType, width, height });
 
@@ -119,15 +126,20 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
   const pdfFontValue = pdfFontObj && pdfFontObj[fontName];
 
   const pageHeight = page.getHeight();
-  const { width, height } = convertForPdfLayoutProps({
-    schema,
-    pageHeight,
-    applyRotateTranslate: false,
-  });
+  
+  // Extract position and rotation from schema
+  const x = schema.position.x;
+  const y = pageHeight - mm2pt(schema.position.y) - height;
+  // Create a proper rotation object for pdf-lib
+  const rotationAngle = Number(schema.rotation || 0);
+  // Import the degrees function from pdf-lib
+  const { degrees } = pdfLib;
+  const rotate = rotationAngle ? degrees(Number(rotationAngle) * 180 / Math.PI) : undefined;
+  const opacity = schema.opacity !== undefined ? schema.opacity : 1;
 
   if (schema.backgroundColor) {
-    const color = hex2PrintingColor(schema.backgroundColor, colorType);
-    page.drawRectangle({ x, y, width, height, rotate, color });
+    const bgColor = hex2PrintingColor(schema.backgroundColor, colorType);
+    page.drawRectangle({ x, y, width, height, rotate, color: bgColor });
   }
 
   const firstLineTextHeight = heightOfFontAtSize(fontKitFont, fontSize);
@@ -190,16 +202,19 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
 
     let yLine = pageHeight - mm2pt(schema.position.y) - yOffset - rowYOffset;
 
+    // Convert rotation angle from radians to degrees for rotatePoint
+    const rotationDegrees = rotationAngle ? Number(rotationAngle) * 180 / Math.PI : 0;
+
     // draw strikethrough
     if (schema.strikethrough && textWidth > 0) {
       const _x = xLine + textWidth + 1;
       const _y = yLine + textHeight / 3;
       page.drawLine({
-        start: rotatePoint({ x: xLine, y: _y }, pivotPoint, rotate.angle),
-        end: rotatePoint({ x: _x, y: _y }, pivotPoint, rotate.angle),
+        start: rotatePoint({ x: xLine, y: _y }, pivotPoint, rotationDegrees),
+        end: rotatePoint({ x: _x, y: _y }, pivotPoint, rotationDegrees),
         thickness: (1 / 12) * fontSize,
         color: color,
-        opacity,
+        opacity: opacity,
       });
     }
 
@@ -208,21 +223,21 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
       const _x = xLine + textWidth + 1;
       const _y = yLine - textHeight / 12;
       page.drawLine({
-        start: rotatePoint({ x: xLine, y: _y }, pivotPoint, rotate.angle),
-        end: rotatePoint({ x: _x, y: _y }, pivotPoint, rotate.angle),
+        start: rotatePoint({ x: xLine, y: _y }, pivotPoint, rotationDegrees),
+        end: rotatePoint({ x: _x, y: _y }, pivotPoint, rotationDegrees),
         thickness: (1 / 12) * fontSize,
         color: color,
-        opacity,
+        opacity: opacity,
       });
     }
 
-    if (rotate.angle !== 0) {
+    if (rotationAngle !== 0) {
       // As we draw each line individually from different points, we must translate each lines position
       // relative to the UI rotation pivot point. see comments in convertForPdfLayoutProps() for more info.
       const rotatedPoint = rotatePoint(
         { x: xLine, y: yLine },
         pivotPoint,
-        rotate.angle
+        rotationDegrees
       );
       xLine = rotatedPoint.x;
       yLine = rotatedPoint.y;
@@ -240,12 +255,12 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
     page.drawText(trimmed, {
       x: xLine,
       y: yLine,
-      rotate,
+      rotate: rotate,
       size: fontSize,
       color,
       lineHeight: lineHeight * fontSize,
       font: pdfFontValue,
-      opacity,
+      opacity: opacity,
     });
   });
 };

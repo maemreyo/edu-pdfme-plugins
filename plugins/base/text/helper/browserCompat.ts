@@ -16,6 +16,7 @@
  */
 
 import type { Font as FontKitFont } from 'fontkit';
+import { getFontMetrics } from './fontMetrics';
 import type {
   BrowserAdjustments,
   BrowserCompatMode,
@@ -560,8 +561,8 @@ export function getBrowserVerticalFontAdjustments(
   verticalAlignment: VerticalAlignment
 ): BrowserAdjustments {
   try {
-    const metrics = FontMetrics.calculateFontMetrics(font, fontSize);
-    const { ascent, descent, baseLineHeight } = metrics;
+    const metrics = getFontMetrics(font);
+    const { ascent, descent, lineHeight: baseLineHeight } = metrics;
 
     // Calculate adjustments based on browser and alignment
     let topAdj = 0;
@@ -611,6 +612,8 @@ export function getBrowserVerticalFontAdjustments(
       lineHeightCompensation: lineHeightAdj,
       requiresCompatMode: false,
       leftOffset: 0,
+      lineHeightAdj: lineHeightAdj,
+      charSpacingAdj: 0,
     };
 
   } catch (error) {
@@ -623,6 +626,8 @@ export function getBrowserVerticalFontAdjustments(
       lineHeightCompensation: 0,
       requiresCompatMode: false,
       leftOffset: 0,
+      lineHeightAdj: 0,
+      charSpacingAdj: 0,
     };
   }
 }
