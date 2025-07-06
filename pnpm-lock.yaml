@@ -20,6 +20,15 @@ importers:
       '@pdfme/ui':
         specifier: ^5.4.0
         version: 5.4.0(@pdfme/common@5.4.0(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(form-render@2.5.3(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)))(@pdfme/schemas@5.4.0(@pdfme/common@5.4.0(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(form-render@2.5.3(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0))))(date-fns@4.1.0)
+      '@types/fontkit':
+        specifier: ^2.0.8
+        version: 2.0.8
+      '@types/node':
+        specifier: ^24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
 
 packages:
 
@@ -232,6 +241,12 @@ packages:
 
   '@swc/helpers@0.5.17':
     resolution: {integrity: sha512-5IKx/Y13RsYd+sauPb2x+U/xZikHjolzfuDgTAl/Tdf3Q8rslRvC19NKDLgAJQ6wsqADk10ntlv08nPFw/gO/A==}
+
+  '@types/fontkit@2.0.8':
+    resolution: {integrity: sha512-wN+8bYxIpJf+5oZdrdtaX04qUuWHcKxcDEgRS9Qm9ZClSHjzEn13SxUC+5eRM+4yXIeTYk8mTzLAWGF64847ew==}
+
+  '@types/node@24.0.10':
+    resolution: {integrity: sha512-ENHwaH+JIRTDIEEbDK6QSQntAYGtbvdDXnMXnZaZ6k13Du1dPMmprkEHIL7ok2Wl2aZevetwTAb5S+7yIF+enA==}
 
   abbrev@1.1.1:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}
@@ -996,6 +1011,14 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
+  typescript@5.8.3:
+    resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@7.8.0:
+    resolution: {integrity: sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw==}
+
   unicode-properties@1.4.1:
     resolution: {integrity: sha512-CLjCCLQ6UuMxWnbIylkisbRj31qxHPAurvena/0iwSVbQ2G1VY5/HjV0IRabOEbDHlzZlRdCrD4NhB0JtU40Pg==}
 
@@ -1363,6 +1386,14 @@ snapshots:
   '@swc/helpers@0.5.17':
     dependencies:
       tslib: 2.8.1
+
+  '@types/fontkit@2.0.8':
+    dependencies:
+      '@types/node': 24.0.10
+
+  '@types/node@24.0.10':
+    dependencies:
+      undici-types: 7.8.0
 
   abbrev@1.1.1:
     optional: true
@@ -2380,6 +2411,10 @@ snapshots:
     optional: true
 
   tslib@2.8.1: {}
+
+  typescript@5.8.3: {}
+
+  undici-types@7.8.0: {}
 
   unicode-properties@1.4.1:
     dependencies:

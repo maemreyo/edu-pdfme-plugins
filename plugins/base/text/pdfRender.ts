@@ -10,9 +10,6 @@ import {
   mm2pt,
 } from "@pdfme/common";
 import {
-  VERTICAL_ALIGN_TOP,
-  VERTICAL_ALIGN_MIDDLE,
-  VERTICAL_ALIGN_BOTTOM,
   DEFAULT_FONT_SIZE,
   DEFAULT_ALIGNMENT,
   DEFAULT_VERTICAL_ALIGNMENT,
@@ -20,14 +17,7 @@ import {
   DEFAULT_CHARACTER_SPACING,
   DEFAULT_FONT_COLOR,
 } from "./constants";
-import {
-  calculateDynamicFontSize,
-  heightOfFontAtSize,
-  getFontDescentInPt,
-  getFontKitFont,
-  widthOfTextAtSize,
-  splitTextToSize,
-} from "./helper";
+import { calculateDynamicFontSize, getFontKitFont, heightOfFontAtSize, getFontDescentInPt, widthOfTextAtSize, wrapText } from './helper';
 import {
   convertForPdfLayoutProps,
   rotatePoint,
@@ -65,19 +55,23 @@ const embedAndGetFontObj = async (arg: {
   return fontObj;
 };
 
-const getFontProp = ({
+const getFontProp = async ({
   value,
   fontKitFont,
   schema,
   colorType,
+  width,
+  height,
 }: {
   value: string;
   fontKitFont: FontKitFont;
   colorType?: ColorType;
   schema: TextSchema;
+  width: number;
+  height: number;
 }) => {
   const fontSize = schema.dynamicFontSize
-    ? calculateDynamicFontSize({ textSchema: schema, fontKitFont, value })
+    ? (await calculateDynamicFontSize({ textSchema: schema, fontKitFont, value, containerDimensions: { width: width, height: height } })).fontSize
     : schema.fontSize ?? DEFAULT_FONT_SIZE;
   const color = hex2PrintingColor(
     schema.fontColor || DEFAULT_FONT_COLOR,
@@ -108,7 +102,7 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
     }),
     getFontKitFont(schema.fontName, font, _cache as Map<string, FontKitFont>),
   ]);
-  const fontProp = getFontProp({ value, fontKitFont, schema, colorType });
+  const fontProp = await getFontProp({ value, fontKitFont, schema, colorType, width, height });
 
   const {
     fontSize,
@@ -125,13 +119,7 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
   const pdfFontValue = pdfFontObj && pdfFontObj[fontName];
 
   const pageHeight = page.getHeight();
-  const {
-    width,
-    height,
-    rotate,
-    position: { x, y },
-    opacity,
-  } = convertForPdfLayoutProps({
+  const { width, height } = convertForPdfLayoutProps({
     schema,
     pageHeight,
     applyRotateTranslate: false,
@@ -147,24 +135,23 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
   const halfLineHeightAdjustment =
     lineHeight === 0 ? 0 : ((lineHeight - 1) * fontSize) / 2;
 
-  const lines = splitTextToSize({
-    value,
-    characterSpacing,
+  const lines = (await wrapText(value, {
+    font: fontKitFont,
     fontSize,
-    fontKitFont,
-    boxWidthInPt: width,
-  });
+    characterSpacing,
+    boxWidth: width,
+  }, schema.lineWrapping)).lines;
 
   // Text lines are rendered from the bottom upwards, we need to adjust the position down
   let yOffset = 0;
-  if (verticalAlignment === VERTICAL_ALIGN_TOP) {
+  if (verticalAlignment === "top") {
     yOffset = firstLineTextHeight + halfLineHeightAdjustment;
   } else {
     const otherLinesHeight = lineHeight * fontSize * (lines.length - 1);
 
-    if (verticalAlignment === VERTICAL_ALIGN_BOTTOM) {
+    if (verticalAlignment === "bottom") {
       yOffset = height - otherLinesHeight + descent - halfLineHeightAdjustment;
-    } else if (verticalAlignment === VERTICAL_ALIGN_MIDDLE) {
+    } else if (verticalAlignment === "middle") {
       yOffset =
         (height - otherLinesHeight - firstLineTextHeight + descent) / 2 +
         firstLineTextHeight;
@@ -175,7 +162,7 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
     x: x + width / 2,
     y: pageHeight - mm2pt(schema.position.y) - height / 2,
   };
-  const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+  const segmenter = typeof Intl.Segmenter !== 'undefined' ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : undefined;
 
   lines.forEach((line, rowIndex) => {
     const trimmed = line.replace("\n", "");
@@ -242,7 +229,7 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
     }
 
     let spacing = characterSpacing;
-    if (alignment === "justify" && line.slice(-1) !== "\n") {
+    if (alignment === "justify" && line.slice(-1) !== "\n" && segmenter) {
       // if alignment is `justify` but the end of line is not newline, then adjust the spacing
       const iterator = segmenter.segment(trimmed)[Symbol.iterator]();
       const len = Array.from(iterator).length;

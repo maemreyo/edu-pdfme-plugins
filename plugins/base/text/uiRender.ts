@@ -1,25 +1,17 @@
 import type * as CSS from "csstype";
 import type { Font as FontKitFont } from "fontkit";
 import { UIRenderProps, getDefaultFont } from "@pdfme/common";
-import type { TextSchema } from "./types";
+import type { TextSchema, VerticalAlignment } from "./types";
 import {
   DEFAULT_FONT_SIZE,
   DEFAULT_ALIGNMENT,
-  VERTICAL_ALIGN_TOP,
-  VERTICAL_ALIGN_MIDDLE,
-  VERTICAL_ALIGN_BOTTOM,
   DEFAULT_VERTICAL_ALIGNMENT,
   DEFAULT_LINE_HEIGHT,
   DEFAULT_CHARACTER_SPACING,
   DEFAULT_FONT_COLOR,
   PLACEHOLDER_FONT_COLOR,
 } from "./constants";
-import {
-  calculateDynamicFontSize,
-  getFontKitFont,
-  getBrowserVerticalFontAdjustments,
-  isFirefox,
-} from "./helper";
+import { calculateDynamicFontSize, getFontKitFont, getBrowserVerticalFontAdjustments, detectBrowserMode, needsFirefoxWorkarounds } from './helper';
 import { isEditable } from "../../utils";
 
 const replaceUnsupportedChars = (
@@ -127,12 +119,13 @@ export const uiRender = async (arg: UIRenderProps<TextSchema>) => {
         // Use a regular function instead of an async one since we don't need await
         (() => {
           if (!textBlock.textContent) return;
-          dynamicFontSize = calculateDynamicFontSize({
+          dynamicFontSize = (await calculateDynamicFontSize({
             textSchema: schema,
             fontKitFont,
             value: getText(textBlock),
             startingFontSize: dynamicFontSize,
-          });
+            containerDimensions: { width: textBlock.offsetWidth, height: textBlock.offsetHeight },
+          })).fontSize;
           textBlock.style.fontSize = `${dynamicFontSize}pt`;
 
           const { topAdj: newTopAdj, bottomAdj: newBottomAdj } =
@@ -185,11 +178,13 @@ export const buildStyledTextContainer = (
   let dynamicFontSize: undefined | number = undefined;
 
   if (schema.dynamicFontSize && value) {
-    dynamicFontSize = calculateDynamicFontSize({
+    dynamicFontSize = await calculateDynamicFontSize({
       textSchema: schema,
       fontKitFont,
       value,
       startingFontSize: dynamicFontSize,
+      containerWidth: rootElement.offsetWidth,
+      containerHeight: rootElement.offsetHeight,
     });
   }
 
@@ -262,7 +257,7 @@ export const buildStyledTextContainer = (
  * This function adds a workaround for Firefox to make the contentEditable element behave like 'plaintext-only'.
  */
 export const makeElementPlainTextContentEditable = (element: HTMLElement) => {
-  if (!isFirefox()) {
+  if (!needsFirefoxWorkarounds()) {
     element.contentEditable = "plaintext-only";
     return;
   }
@@ -287,14 +282,14 @@ export const makeElementPlainTextContentEditable = (element: HTMLElement) => {
 };
 
 export const mapVerticalAlignToFlex = (
-  verticalAlignmentValue: string | undefined
+  verticalAlignmentValue: VerticalAlignment | undefined
 ) => {
   switch (verticalAlignmentValue) {
-    case VERTICAL_ALIGN_TOP:
+    case "top":
       return "flex-start";
-    case VERTICAL_ALIGN_MIDDLE:
+    case "middle":
       return "center";
-    case VERTICAL_ALIGN_BOTTOM:
+    case "bottom":
       return "flex-end";
   }
   return "flex-start";

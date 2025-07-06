@@ -1,4 +1,4 @@
-import type { ALIGNMENT, VERTICAL_ALIGNMENT } from "../text/types";
+import type { Alignment, VerticalAlignment } from "../text/types";
 import type { Schema } from "@pdfme/common";
 
 export type Spacing = {
@@ -12,8 +12,8 @@ type BoxDimensions = Spacing;
 
 export interface CellStyle {
   fontName?: string;
-  alignment: ALIGNMENT;
-  verticalAlignment: VERTICAL_ALIGNMENT;
+  alignment: Alignment;
+  verticalAlignment: VerticalAlignment;
   fontSize: number;
   lineHeight: number;
   characterSpacing: number;
@@ -38,7 +38,7 @@ export interface TableSchema extends Schema {
   headStyles: CellStyle;
   bodyStyles: CellStyle & { alternateBackgroundColor: string };
   columnStyles: {
-    alignment?: { [colIndex: number]: ALIGNMENT };
+    alignment?: { [colIndex: number]: Alignment };
   };
 }
 

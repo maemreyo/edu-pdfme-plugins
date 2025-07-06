@@ -4,19 +4,13 @@ import {
   DEFAULT_LINE_HEIGHT,
   DEFAULT_CHARACTER_SPACING,
   DEFAULT_FONT_COLOR,
-  ALIGN_RIGHT,
-  ALIGN_CENTER,
-  ALIGN_LEFT,
-  VERTICAL_ALIGN_TOP,
-  VERTICAL_ALIGN_MIDDLE,
-  VERTICAL_ALIGN_BOTTOM,
 } from "../text/constants";
 import { HEX_COLOR_PATTERN } from "../../constants";
 
 export const getDefaultCellStyles = () => ({
   fontName: undefined,
   alignment: DEFAULT_ALIGNMENT,
-  verticalAlignment: VERTICAL_ALIGN_MIDDLE,
+  verticalAlignment: "middle",
   fontSize: DEFAULT_FONT_SIZE,
   lineHeight: DEFAULT_LINE_HEIGHT,
   characterSpacing: DEFAULT_CHARACTER_SPACING,
@@ -82,9 +76,9 @@ export const getCellPropPanelSchema = (arg: {
       widget: "select",
       props: {
         options: [
-          { label: i18n("schemas.left"), value: ALIGN_LEFT },
-          { label: i18n("schemas.center"), value: ALIGN_CENTER },
-          { label: i18n("schemas.right"), value: ALIGN_RIGHT },
+          { label: i18n("schemas.left"), value: "left" },
+          { label: i18n("schemas.center"), value: "center" },
+          { label: i18n("schemas.right"), value: "right" },
         ],
       },
       span: 8,
@@ -95,9 +89,9 @@ export const getCellPropPanelSchema = (arg: {
       widget: "select",
       props: {
         options: [
-          { label: i18n("schemas.top"), value: VERTICAL_ALIGN_TOP },
-          { label: i18n("schemas.middle"), value: VERTICAL_ALIGN_MIDDLE },
-          { label: i18n("schemas.bottom"), value: VERTICAL_ALIGN_BOTTOM },
+          { label: i18n("schemas.top"), value: "top" },
+          { label: i18n("schemas.middle"), value: "middle" },
+          { label: i18n("schemas.bottom"), value: "bottom" },
         ],
       },
       span: 8,
@@ -200,9 +194,9 @@ export const getColumnStylesPropPanelSchema = ({
             widget: "select",
             props: {
               options: [
-                { label: i18n("schemas.left"), value: ALIGN_LEFT },
-                { label: i18n("schemas.center"), value: ALIGN_CENTER },
-                { label: i18n("schemas.right"), value: ALIGN_RIGHT },
+                { label: i18n("schemas.left"), value: "left" },
+                { label: i18n("schemas.center"), value: "center" },
+                { label: i18n("schemas.right"), value: "right" },
               ],
             },
           },

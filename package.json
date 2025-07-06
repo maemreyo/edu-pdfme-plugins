@@ -15,6 +15,9 @@
     "@pdfme/common": "^5.4.0",
     "@pdfme/generator": "^5.4.0",
     "@pdfme/schemas": "^5.4.0",
-    "@pdfme/ui": "^5.4.0"
+    "@pdfme/ui": "^5.4.0",
+    "@types/fontkit": "^2.0.8",
+    "@types/node": "^24.0.10",
+    "typescript": "^5.8.3"
   }
 }

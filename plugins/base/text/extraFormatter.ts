@@ -11,13 +11,8 @@ import {
   TextVerticalAlignTopIcon,
 } from './icons/index';
 import {
-  ALIGN_CENTER,
-  ALIGN_RIGHT,
   DEFAULT_ALIGNMENT,
   DEFAULT_VERTICAL_ALIGNMENT,
-  VERTICAL_ALIGN_BOTTOM,
-  VERTICAL_ALIGN_MIDDLE,
-  ALIGN_JUSTIFY,
 } from './constants';
 
 export enum Formatter {
@@ -52,9 +47,9 @@ export function getExtraFormatterSchema(i18n: (key: string) => string): {
     { key: Formatter.STRIKETHROUGH, icon: TextStrikethroughIcon, type: 'boolean' },
     { key: Formatter.UNDERLINE, icon: TextUnderlineIcon, type: 'boolean' },
     { key: Formatter.ALIGNMENT, icon: TextAlignLeftIcon, type: 'select', value: DEFAULT_ALIGNMENT },
-    { key: Formatter.ALIGNMENT, icon: TextAlignCenterIcon, type: 'select', value: ALIGN_CENTER },
-    { key: Formatter.ALIGNMENT, icon: TextAlignRightIcon, type: 'select', value: ALIGN_RIGHT },
-    { key: Formatter.ALIGNMENT, icon: TextAlignJustifyIcon, type: 'select', value: ALIGN_JUSTIFY },
+    { key: Formatter.ALIGNMENT, icon: TextAlignCenterIcon, type: 'select', value: "center" },
+    { key: Formatter.ALIGNMENT, icon: TextAlignRightIcon, type: 'select', value: "right" },
+    { key: Formatter.ALIGNMENT, icon: TextAlignJustifyIcon, type: 'select', value: "justify" },
     {
       key: Formatter.VERTICAL_ALIGNMENT,
       icon: TextVerticalAlignTopIcon,
@@ -65,13 +60,13 @@ export function getExtraFormatterSchema(i18n: (key: string) => string): {
       key: Formatter.VERTICAL_ALIGNMENT,
       icon: TextVerticalAlignMiddleIcon,
       type: 'select',
-      value: VERTICAL_ALIGN_MIDDLE,
+      value: "middle",
     },
     {
       key: Formatter.VERTICAL_ALIGNMENT,
       icon: TextVerticalAlignBottomIcon,
       type: 'select',
-      value: VERTICAL_ALIGN_BOTTOM,
+      value: "bottom",
     },
   ];
   return {

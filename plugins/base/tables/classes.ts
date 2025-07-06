@@ -1,7 +1,7 @@
 import { Font, mm2pt, pt2mm } from "@pdfme/common";
 import type { Font as FontKitFont } from "fontkit";
 import {
-  splitTextToSize,
+  wrapText,
   getFontKitFont,
   widthOfTextAtSize,
 } from "../text/helper";
@@ -306,13 +306,12 @@ async function fitContent(
       if (!cell) continue;
 
       const fontKitFont = await getFontKitFontByFontName(cell.styles.fontName);
-      cell.text = splitTextToSize({
-        value: cell.raw,
-        characterSpacing: cell.styles.characterSpacing,
-        boxWidthInPt: mm2pt(cell.width),
+      cell.text = (await wrapText(cell.raw, {
+        font: fontKitFont,
         fontSize: cell.styles.fontSize,
-        fontKitFont,
-      });
+        characterSpacing: cell.styles.characterSpacing,
+        boxWidth: mm2pt(cell.width),
+      })).lines;
 
       cell.contentHeight = cell.getContentHeight();
 
