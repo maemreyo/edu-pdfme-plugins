@@ -1,7 +1,3 @@
-import fillInTheBlank from "./fillInTheBlank";
-import linedAnswerBox from "./linedAnswerBox";
-import multipleChoiceQuestion from "./multipleChoiceQuestion";
-import calloutBox from "./calloutBox";
 
 /**
  * Custom plugins for pdfme
@@ -11,15 +7,10 @@ import calloutBox from "./calloutBox";
  * with specialized educational form elements.
  */
 
-export { fillInTheBlank, linedAnswerBox, multipleChoiceQuestion, calloutBox };
 
 /**
  * Custom plugins object for convenient import
  * Usage: import { customPlugins } from './plugins/custom'
  */
 export const customPlugins = {
-  fillInTheBlank,
-  linedAnswerBox,
-  multipleChoiceQuestion,
-  calloutBox,
 };

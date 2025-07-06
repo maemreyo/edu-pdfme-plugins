@@ -68,13 +68,3 @@ export const allPlugins = {
   ...customPlugins,
 };
 
-/**
- * Educational plugins specifically
- * Usage: import { educationalPlugins } from './plugins'
- */
-export const educationalPlugins = {
-  fillInTheBlank: customPlugins.fillInTheBlank,
-  linedAnswerBox: customPlugins.linedAnswerBox,
-  multipleChoiceQuestion: customPlugins.multipleChoiceQuestion,
-  calloutBox: customPlugins.calloutBox,
-};
