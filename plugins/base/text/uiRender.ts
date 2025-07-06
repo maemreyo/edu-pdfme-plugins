@@ -81,9 +81,59 @@ export const uiRender = async (arg: UIRenderProps<TextSchema>) => {
     return text;
   };
   const font = options?.font || getDefaultFont();
-  const fontKitFont = await getFontKitFont(
-    font[schema.fontName || 'Helvetica'].data
-  );
+  let fontName = schema.fontName || 'Helvetica';
+  
+  // Try to load the specified font with proper fallback mechanism
+  let fontKitFont;
+  try {
+    // Check if the font exists in the font object
+    if (!font[fontName]) {
+      console.warn(`Font "${fontName}" not found in font object, using fallback`);
+      // Find the first available font in the font object
+      const availableFonts = Object.keys(font);
+      if (availableFonts.length === 0) {
+        throw new Error('No fonts available in the font object');
+      }
+      fontName = availableFonts[0];
+      console.info(`Using "${fontName}" as fallback font`);
+    }
+    
+    // Make sure the font has data
+    if (!font[fontName] || !font[fontName].data) {
+      throw new Error(`Font "${fontName}" has no data`);
+    }
+    
+    fontKitFont = await getFontKitFont(
+      font[fontName].data,
+      fontName
+    );
+  } catch (error) {
+    console.warn(`Failed to load font "${fontName}":`, error);
+    
+    // Try to find any working font in the font object
+    const availableFonts = Object.keys(font);
+    for (const alternateFontName of availableFonts) {
+      if (alternateFontName !== fontName && font[alternateFontName] && font[alternateFontName].data) {
+        try {
+          console.info(`Trying alternate font "${alternateFontName}"`);
+          fontKitFont = await getFontKitFont(
+            font[alternateFontName].data,
+            alternateFontName
+          );
+          fontName = alternateFontName;
+          console.info(`Successfully loaded alternate font "${alternateFontName}"`);
+          break;
+        } catch (e) {
+          console.warn(`Failed to load alternate font "${alternateFontName}":`, e);
+        }
+      }
+    }
+    
+    // If we still don't have a font, create a simple fallback
+    if (!fontKitFont) {
+      throw new Error('Could not load any fonts');
+    }
+  }
   const textBlock = await buildStyledTextContainer(
     arg,
     fontKitFont,

@@ -101,14 +101,37 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
     applyRotateTranslate: false,
   });
 
-  const [pdfFontObj, fontKitFont] = await Promise.all([
-    embedAndGetFontObj({
-      pdfDoc,
-      font,
-      _cache: _cache as unknown as Map<PDFDocument, { [key: string]: PDFFont }>,
-    }),
-    getFontKitFont(font[schema.fontName || 'Helvetica'].data),
-  ]);
+  // Get the PDF font object
+  const pdfFontObj = await embedAndGetFontObj({
+    pdfDoc,
+    font,
+    _cache: _cache as unknown as Map<PDFDocument, { [key: string]: PDFFont }>,
+  });
+  
+  // Try to load the specified font, fall back to Helvetica if it fails
+  let fontName = schema.fontName || 'Helvetica';
+  let fontKitFont;
+  
+  try {
+    // Check if the font exists in the font object
+    if (!font[fontName]) {
+      console.warn(`Font "${fontName}" not found in font object, falling back to Helvetica`);
+      fontName = 'Helvetica';
+    }
+    
+    fontKitFont = await getFontKitFont(
+      font[fontName].data,
+      fontName
+    );
+  } catch (error) {
+    console.warn(`Failed to load font "${fontName}", falling back to Helvetica:`, error);
+    // Fall back to Helvetica
+    fontName = 'Helvetica';
+    fontKitFont = await getFontKitFont(
+      font[fontName].data,
+      fontName
+    );
+  }
   const fontProp = await getFontProp({ value, fontKitFont, schema, colorType, width, height });
 
   const {
@@ -120,9 +143,7 @@ export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
     characterSpacing,
   } = fontProp;
 
-  const fontName = (
-    schema.fontName ? schema.fontName : getFallbackFontName(font)
-  ) as keyof typeof pdfFontObj;
+  // Use the fontName we've already validated and potentially fallen back from
   const pdfFontValue = pdfFontObj && pdfFontObj[fontName];
 
   const pageHeight = page.getHeight();

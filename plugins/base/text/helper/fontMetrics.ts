@@ -167,9 +167,10 @@ export async function getFontKitFont(
 
     // Load font with FontKit (assuming fontkit is available)
     const fontkit = await import('fontkit');
-    // Convert ArrayBuffer to Buffer for fontkit
-    const bufferData = Buffer.from(buffer);
-    const font = fontkit.create(bufferData) as FontKitFont;
+    
+    // Use the ArrayBuffer directly - fontkit should handle it
+    // Note: In browser environments, we can't use Node.js Buffer
+    const font = fontkit.create(buffer) as FontKitFont;
     
     // Validate loaded font
     if (!font) {
@@ -179,7 +180,28 @@ export async function getFontKitFont(
     return font;
 
   } catch (error) {
-    throw new FontLoadError(fontName, error as Error);
+    console.error(`Font loading error for ${fontName}:`, error);
+    
+    // Check if font data exists in the font object
+    if (typeof fontData === 'undefined') {
+      throw new FontLoadError(fontName, new Error(`Font data for "${fontName}" is undefined`));
+    }
+    
+    // Check if font data is empty
+    if (typeof fontData === 'string' && fontData.length === 0) {
+      throw new FontLoadError(fontName, new Error(`Font data for "${fontName}" is an empty string`));
+    }
+    
+    // If it's an ArrayBuffer, check its size
+    if (fontData instanceof ArrayBuffer && fontData.byteLength === 0) {
+      throw new FontLoadError(fontName, new Error(`Font data for "${fontName}" is an empty ArrayBuffer`));
+    }
+    
+    // Throw the original error with more context
+    throw new FontLoadError(
+      fontName, 
+      new Error(`Failed to load font "${fontName}": ${(error as Error).message || String(error)}`)
+    );
   }
 }
 

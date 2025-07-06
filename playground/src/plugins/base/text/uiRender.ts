@@ -81,9 +81,30 @@ export const uiRender = async (arg: UIRenderProps<TextSchema>) => {
     return text;
   };
   const font = options?.font || getDefaultFont();
-  const fontKitFont = await getFontKitFont(
-    font[schema.fontName || 'Helvetica'].data
-  );
+  let fontName = schema.fontName || 'Helvetica';
+  
+  // Try to load the specified font, fall back to Helvetica if it fails
+  let fontKitFont;
+  try {
+    // Check if the font exists in the font object
+    if (!font[fontName]) {
+      console.warn(`Font "${fontName}" not found in font object, falling back to Helvetica`);
+      fontName = 'Helvetica';
+    }
+    
+    fontKitFont = await getFontKitFont(
+      font[fontName].data,
+      fontName
+    );
+  } catch (error) {
+    console.warn(`Failed to load font "${fontName}", falling back to Helvetica:`, error);
+    // Fall back to Helvetica
+    fontName = 'Helvetica';
+    fontKitFont = await getFontKitFont(
+      font[fontName].data,
+      fontName
+    );
+  }
   const textBlock = await buildStyledTextContainer(
     arg,
     fontKitFont,

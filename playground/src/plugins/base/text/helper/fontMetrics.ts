@@ -179,7 +179,28 @@ export async function getFontKitFont(
     return font;
 
   } catch (error) {
-    throw new FontLoadError(fontName, error as Error);
+    console.error(`Font loading error for ${fontName}:`, error);
+    
+    // Check if font data exists in the font object
+    if (typeof fontData === 'undefined') {
+      throw new FontLoadError(fontName, new Error(`Font data for "${fontName}" is undefined`));
+    }
+    
+    // Check if font data is empty
+    if (typeof fontData === 'string' && fontData.length === 0) {
+      throw new FontLoadError(fontName, new Error(`Font data for "${fontName}" is an empty string`));
+    }
+    
+    // If it's an ArrayBuffer, check its size
+    if (fontData instanceof ArrayBuffer && fontData.byteLength === 0) {
+      throw new FontLoadError(fontName, new Error(`Font data for "${fontName}" is an empty ArrayBuffer`));
+    }
+    
+    // Throw the original error with more context
+    throw new FontLoadError(
+      fontName, 
+      new Error(`Failed to load font "${fontName}": ${(error as Error).message || String(error)}`)
+    );
   }
 }
 
