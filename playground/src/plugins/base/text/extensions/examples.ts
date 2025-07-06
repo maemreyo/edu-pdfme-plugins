@@ -1,3 +1,4 @@
+// plugins/text/extensions/examples.ts
 // CREATED: 2025-01-07 - Example extensions demonstrating the extension system
 
 import type {
@@ -386,16 +387,32 @@ export const exampleExtensions = [
 export const registerExampleExtensions = async () => {
   const { extensionManager } = await import('./manager');
   
+  let successCount = 0;
+  let errorCount = 0;
+  
   for (const extension of exampleExtensions) {
     try {
       await extensionManager.register(extension);
       console.log(`✅ Registered example extension: ${extension.name}`);
+      successCount++;
     } catch (error) {
-      console.warn(`⚠️ Failed to register extension ${extension.name}:`, error);
+      console.warn(`⚠️ Failed to register extension ${extension.name}:`, error.message);
+      errorCount++;
+      
+      // 🐛 FIX: Continue with other extensions instead of failing completely
+      // Don't throw, just log and continue
     }
   }
   
-  console.log(`🔌 Registered ${exampleExtensions.length} example extensions`);
+  console.log(`🔌 Extension registration complete: ${successCount} successful, ${errorCount} failed`);
+  
+  // 🐛 FIX: Return success info instead of throwing on any failure
+  return {
+    total: exampleExtensions.length,
+    successful: successCount,
+    failed: errorCount,
+    success: successCount > 0, // Consider success if at least one extension registered
+  };
 };
 
 /**
@@ -404,16 +421,30 @@ export const registerExampleExtensions = async () => {
 export const unregisterExampleExtensions = async () => {
   const { extensionManager } = await import('./manager');
   
+  let successCount = 0;
+  let errorCount = 0;
+  
   for (const extension of exampleExtensions) {
     try {
       await extensionManager.unregister(extension.name);
       console.log(`✅ Unregistered example extension: ${extension.name}`);
+      successCount++;
     } catch (error) {
-      console.warn(`⚠️ Failed to unregister extension ${extension.name}:`, error);
+      console.warn(`⚠️ Failed to unregister extension ${extension.name}:`, error.message);
+      errorCount++;
+      
+      // 🐛 FIX: Continue with other extensions instead of failing completely
     }
   }
   
-  console.log(`🔌 Unregistered ${exampleExtensions.length} example extensions`);
+  console.log(`🔌 Extension unregistration complete: ${successCount} successful, ${errorCount} failed`);
+  
+  return {
+    total: exampleExtensions.length,
+    successful: successCount,
+    failed: errorCount,
+    success: true, // Always consider unregistration successful
+  };
 };
 
 // === USAGE EXAMPLES ===

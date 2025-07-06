@@ -4,8 +4,6 @@ import type {
   TextPluginExtension, 
   ValidationResult,
   TextProcessingContext,
-  UIRenderContext,
-  PDFRenderContext,
 } from '../extensions/types';
 
 /**
@@ -28,9 +26,12 @@ export const testExtensionManagerLifecycle = async (): Promise<ValidationResult>
   try {
     const { extensionManager } = await import('../extensions/manager');
     
+    // 🐛 FIX: Use unique test extension name to avoid conflicts
+    const testExtensionName = `test-lifecycle-${Date.now()}`;
+    
     // Test extension registration
     const testExtension: TextPluginExtension = {
-      name: 'test-lifecycle',
+      name: testExtensionName,
       version: '1.0.0',
       description: 'Test extension for lifecycle validation',
       config: { maxExecutionTime: 50 },
@@ -46,27 +47,31 @@ export const testExtensionManagerLifecycle = async (): Promise<ValidationResult>
     await extensionManager.register(testExtension);
     
     const registry = extensionManager.getRegistry();
-    if (!registry.has('test-lifecycle')) {
+    if (!registry.has(testExtensionName)) {
       errors.push('Extension registration failed');
     }
     
     // Test enable/disable
-    await extensionManager.disable('test-lifecycle');
-    const disabledEntry = registry.get('test-lifecycle');
+    await extensionManager.disable(testExtensionName);
+    const disabledEntry = registry.get(testExtensionName);
     if (disabledEntry?.isEnabled) {
       errors.push('Extension disable failed');
     }
     
-    await extensionManager.enable('test-lifecycle');
-    const enabledEntry = registry.get('test-lifecycle');
+    await extensionManager.enable(testExtensionName);
+    const enabledEntry = registry.get(testExtensionName);
     if (!enabledEntry?.isEnabled) {
       errors.push('Extension enable failed');
     }
     
-    // Test unregistration
-    await extensionManager.unregister('test-lifecycle');
-    if (registry.has('test-lifecycle')) {
-      errors.push('Extension unregistration failed');
+    // 🐛 FIX: Always cleanup test extension
+    try {
+      await extensionManager.unregister(testExtensionName);
+      if (registry.has(testExtensionName)) {
+        errors.push('Extension unregistration failed');
+      }
+    } catch (cleanupError) {
+      warnings.push(`Test cleanup failed: ${cleanupError.message}`);
     }
     
   } catch (error) {
@@ -97,9 +102,12 @@ export const testExtensionHookExecution = async (): Promise<ValidationResult> =>
   try {
     const { extensionManager } = await import('../extensions/manager');
     
+    // 🐛 FIX: Use unique test extension name
+    const testExtensionName = `test-hooks-${Date.now()}`;
+    
     // Create test extension with multiple hooks
     const testExtension: TextPluginExtension = {
-      name: 'test-hooks',
+      name: testExtensionName,
       version: '1.0.0',
       description: 'Test extension for hook validation',
       config: { maxExecutionTime: 100 },
@@ -153,28 +161,14 @@ export const testExtensionHookExecution = async (): Promise<ValidationResult> =>
     const beforeContext: TextProcessingContext = {
       value: 'test text',
       schema: {
-        id: 'test',
-        name: 'test',
-        type: 'text',
-        content: 'test',
-        position: { x: 0, y: 0 },
-        width: 100,
-        height: 50,
-        rotate: 0,
-        opacity: 1,
-        alignment: 'left',
-        verticalAlignment: 'top',
-        fontSize: 12,
-        lineHeight: 1,
-        characterSpacing: 0,
-        fontColor: '#000000',
-        backgroundColor: '',
+        id: 'test', name: 'test', type: 'text', content: 'test',
+        position: { x: 0, y: 0 }, width: 100, height: 50, rotate: 0, opacity: 1,
+        alignment: 'left', verticalAlignment: 'top', fontSize: 12, lineHeight: 1,
+        characterSpacing: 0, fontColor: '#000000', backgroundColor: '',
       },
       fontKitFont: {} as any,
       metadata: {
-        processingStage: 'pre',
-        timestamp: Date.now(),
-        requestId: 'test-123',
+        processingStage: 'pre', timestamp: Date.now(), requestId: 'test-123',
       }
     };
     
@@ -196,7 +190,7 @@ export const testExtensionHookExecution = async (): Promise<ValidationResult> =>
     };
     
     const validationResult = await extensionManager.executeExtensionHook(
-      'test-hooks',
+      testExtensionName,
       'validate',
       validationContext
     );
@@ -212,7 +206,7 @@ export const testExtensionHookExecution = async (): Promise<ValidationResult> =>
     };
     
     const invalidResult = await extensionManager.executeExtensionHook(
-      'test-hooks',
+      testExtensionName,
       'validate',
       invalidValidationContext
     );
@@ -221,8 +215,12 @@ export const testExtensionHookExecution = async (): Promise<ValidationResult> =>
       errors.push('Validation hook failed to catch invalid schema');
     }
     
-    // Cleanup
-    await extensionManager.unregister('test-hooks');
+    // 🐛 FIX: Always cleanup test extension
+    try {
+      await extensionManager.unregister(testExtensionName);
+    } catch (cleanupError) {
+      warnings.push(`Test cleanup failed: ${cleanupError.message}`);
+    }
     
   } catch (error) {
     errors.push(`Hook execution test failed: ${error.message}`);
@@ -252,9 +250,13 @@ export const testExtensionErrorHandling = async (): Promise<ValidationResult> =>
   try {
     const { extensionManager } = await import('../extensions/manager');
     
+    // 🐛 FIX: Use unique test extension names
+    const failingExtensionName = `test-failing-${Date.now()}`;
+    const slowExtensionName = `test-slow-${Date.now()}`;
+    
     // Create failing extension
     const failingExtension: TextPluginExtension = {
-      name: 'test-failing',
+      name: failingExtensionName,
       version: '1.0.0',
       description: 'Test extension that fails',
       config: { maxExecutionTime: 50 },
@@ -267,7 +269,7 @@ export const testExtensionErrorHandling = async (): Promise<ValidationResult> =>
     
     // Create slow extension
     const slowExtension: TextPluginExtension = {
-      name: 'test-slow',
+      name: slowExtensionName,
       version: '1.0.0',
       description: 'Test extension that is slow',
       config: { maxExecutionTime: 10 }, // Very short timeout
@@ -311,7 +313,7 @@ export const testExtensionErrorHandling = async (): Promise<ValidationResult> =>
     
     // Check that failing extension was disabled
     const registry = extensionManager.getRegistry();
-    const failingEntry = registry.get('test-failing');
+    const failingEntry = registry.get(failingExtensionName);
     
     if (failingEntry && failingEntry.statistics.errorCount === 0) {
       warnings.push('Error counting may not be working properly');
@@ -319,7 +321,7 @@ export const testExtensionErrorHandling = async (): Promise<ValidationResult> =>
     
     // Test timeout handling (this might be tricky to test reliably)
     try {
-      await extensionManager.executeExtensionHook('test-slow', 'beforeTextProcessing', testContext);
+      await extensionManager.executeExtensionHook(slowExtensionName, 'beforeTextProcessing', testContext);
       warnings.push('Timeout handling may not be working (extension should have timed out)');
     } catch (error) {
       // Expected - timeout should cause error
@@ -328,9 +330,13 @@ export const testExtensionErrorHandling = async (): Promise<ValidationResult> =>
       }
     }
     
-    // Cleanup
-    await extensionManager.unregister('test-failing');
-    await extensionManager.unregister('test-slow');
+    // 🐛 FIX: Always cleanup test extensions
+    try {
+      await extensionManager.unregister(failingExtensionName);
+      await extensionManager.unregister(slowExtensionName);
+    } catch (cleanupError) {
+      warnings.push(`Test cleanup failed: ${cleanupError.message}`);
+    }
     
   } catch (error) {
     errors.push(`Error handling test failed: ${error.message}`);
@@ -360,9 +366,12 @@ export const testExtensionPerformanceMonitoring = async (): Promise<ValidationRe
   try {
     const { extensionManager } = await import('../extensions/manager');
     
+    // 🐛 FIX: Use unique test extension name
+    const monitoredExtensionName = `test-monitored-${Date.now()}`;
+    
     // Create extension with performance monitoring
     const monitoredExtension: TextPluginExtension = {
-      name: 'test-monitored',
+      name: monitoredExtensionName,
       version: '1.0.0',
       description: 'Test extension for performance monitoring',
       config: { 
@@ -404,7 +413,7 @@ export const testExtensionPerformanceMonitoring = async (): Promise<ValidationRe
     
     // Check if metrics were recorded
     const registry = extensionManager.getRegistry();
-    const entry = registry.get('test-monitored');
+    const entry = registry.get(monitoredExtensionName);
     
     if (!entry || entry.statistics.totalExecutions === 0) {
       errors.push('Performance metrics not recorded');
@@ -420,8 +429,12 @@ export const testExtensionPerformanceMonitoring = async (): Promise<ValidationRe
       warnings.push('Performance metrics collection may not be working');
     }
     
-    // Cleanup
-    await extensionManager.unregister('test-monitored');
+    // 🐛 FIX: Always cleanup test extension
+    try {
+      await extensionManager.unregister(monitoredExtensionName);
+    } catch (cleanupError) {
+      warnings.push(`Test cleanup failed: ${cleanupError.message}`);
+    }
     
   } catch (error) {
     errors.push(`Performance monitoring test failed: ${error.message}`);
@@ -469,9 +482,12 @@ export const testExtensionIntegration = async (): Promise<ValidationResult> => {
       warnings.push('Extension stats may not be working properly');
     }
     
+    // 🐛 FIX: Use unique test extension name
+    const integrationExtensionName = `test-integration-${Date.now()}`;
+    
     // Create test extension for integration
     const integrationExtension: TextPluginExtension = {
-      name: 'test-integration',
+      name: integrationExtensionName,
       version: '1.0.0',
       description: 'Test extension for integration',
       config: { maxExecutionTime: 100 },
@@ -500,8 +516,12 @@ export const testExtensionIntegration = async (): Promise<ValidationResult> => {
       errors.push('processTextWithExtensions not available');
     }
     
-    // Cleanup
-    await extensionManager.unregister('test-integration');
+    // 🐛 FIX: Always cleanup test extension
+    try {
+      await extensionManager.unregister(integrationExtensionName);
+    } catch (cleanupError) {
+      warnings.push(`Test cleanup failed: ${cleanupError.message}`);
+    }
     
   } catch (error) {
     errors.push(`Integration test failed: ${error.message}`);

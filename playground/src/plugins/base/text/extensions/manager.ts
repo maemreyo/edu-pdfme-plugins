@@ -1,6 +1,7 @@
+// plugins/text/extensions/manager.ts
 // CREATED: 2025-01-07 - Plugin Extension Manager with Safe Execution
 
-import type {
+import {
   TextPluginExtension,
   TextPluginHooks,
   ExtensionRegistryEntry,
@@ -91,6 +92,13 @@ export class TextPluginExtensionManager {
       // Validate extension
       this.validateExtension(extension);
       
+      // 🐛 FIX: Handle re-registration gracefully
+      if (this.registry.has(extension.name)) {
+        this.log('warn', `Extension ${extension.name} is already registered, re-registering...`);
+        // Unregister existing first
+        await this.unregister(extension.name);
+      }
+      
       // Check for conflicts
       this.checkConflicts(extension);
       
@@ -142,7 +150,8 @@ export class TextPluginExtensionManager {
   public async unregister(extensionName: string): Promise<void> {
     const entry = this.registry.get(extensionName);
     if (!entry) {
-      throw new Error(`Extension not found: ${extensionName}`);
+      this.log('warn', `Extension not found for unregistration: ${extensionName}`);
+      return; // 🐛 FIX: Don't throw error, just warn and return
     }
     
     try {
@@ -163,6 +172,8 @@ export class TextPluginExtensionManager {
       
     } catch (error) {
       this.log('error', `Failed to unregister extension ${extensionName}`, error);
+      // 🐛 FIX: Still remove from registry even if uninstall hook fails
+      this.registry.delete(extensionName);
       throw error;
     }
   }
@@ -416,10 +427,8 @@ export class TextPluginExtensionManager {
       errors.push('Extension config is required and must be an object');
     }
     
-    // Check for existing extension
-    if (this.registry.has(extension.name)) {
-      errors.push(`Extension ${extension.name} is already registered`);
-    }
+    // 🐛 FIX: Don't check for existing extension here, allow re-registration
+    // This will be handled in the register method
     
     if (errors.length > 0) {
       throw new ExtensionValidationError(extension.name, errors);
