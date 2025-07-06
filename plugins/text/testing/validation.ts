@@ -266,9 +266,9 @@ export const testSchemaValidation = (): ValidationResult => {
 };
 
 /**
- * COMPREHENSIVE TEST SUITE
+ * COMPREHENSIVE TEST SUITE WITH EXTENSION SYSTEM
  * 
- * Runs all validation tests and returns combined results
+ * Runs all validation tests including the new extension system validation
  */
 export const runComprehensiveValidation = async (): Promise<ValidationResult> => {
   console.log('🧪 Running comprehensive text plugin validation...');
@@ -279,6 +279,26 @@ export const runComprehensiveValidation = async (): Promise<ValidationResult> =>
     { name: 'Dynamic Font Sizing', test: testDynamicFontSizing },
     { name: 'Browser Compatibility', test: () => Promise.resolve(testBrowserCompatibility()) },
     { name: 'Schema Validation', test: () => Promise.resolve(testSchemaValidation()) },
+    // 🆕 Extension System Tests
+    { name: 'Extension System', test: async () => {
+      try {
+        const { runExtensionSystemValidation } = await import('./extensionValidation');
+        return await runExtensionSystemValidation();
+      } catch (error) {
+        return {
+          isValid: false,
+          errors: [{
+            code: 'EXT_SYSTEM_UNAVAILABLE',
+            message: `Extension system validation failed: ${error.message}`,
+            severity: 'warning' as const, // Not critical - can work without extensions
+          }],
+          metadata: {
+            validatedBy: 'extension-system-fallback',
+            executionTime: performance.now(),
+          }
+        };
+      }
+    }},
   ];
   
   const allErrors: string[] = [];
@@ -293,12 +313,17 @@ export const runComprehensiveValidation = async (): Promise<ValidationResult> =>
         console.log(`    ✅ ${name} passed`);
       } else {
         console.log(`    ❌ ${name} failed`);
-        allErrors.push(...result.errors.map(e => `${name}: ${e}`));
+        result.errors.forEach(error => {
+          if (error.severity === 'error') {
+            allErrors.push(`${name}: ${error.message}`);
+          } else {
+            allWarnings.push(`${name}: ${error.message}`);
+          }
+        });
       }
       
-      if (result.warnings.length > 0) {
+      if (result.errors.some(e => e.severity === 'warning')) {
         console.log(`    ⚠️  ${name} warnings`);
-        allWarnings.push(...result.warnings.map(w => `${name}: ${w}`));
       }
       
     } catch (error) {
@@ -333,7 +358,7 @@ export const runComprehensiveValidation = async (): Promise<ValidationResult> =>
 };
 
 /**
- * PERFORMANCE BENCHMARKS
+ * PERFORMANCE BENCHMARKS WITH EXTENSION SYSTEM
  */
 export const runPerformanceBenchmarks = async (): Promise<void> => {
   console.log('⚡ Running performance benchmarks...');
@@ -359,5 +384,49 @@ export const runPerformanceBenchmarks = async (): Promise<void> => {
     console.warn('    ⚠️ Performance warning: Text width calculation is slow');
   } else {
     console.log('    ✅ Performance: Text width calculation is fast');
+  }
+  
+  // 🆕 Benchmark extension system if available
+  try {
+    const { quickExtensionHealthCheck } = await import('./extensionValidation');
+    const { extensionManager } = await import('../extensions/manager');
+    
+    const extensionHealthy = await quickExtensionHealthCheck();
+    console.log(`  🔌 Extension system health: ${extensionHealthy ? '✅ Healthy' : '❌ Issues detected'}`);
+    
+    // Benchmark extension hook execution
+    const registry = extensionManager.getRegistry();
+    if (registry.size > 0) {
+      const extensionStart = performance.now();
+      
+      // Simulate hook execution
+      const testContext = {
+        value: 'benchmark test',
+        schema: {
+          id: 'bench', name: 'bench', type: 'text', content: 'bench',
+          position: { x: 0, y: 0 }, width: 100, height: 50, rotate: 0, opacity: 1,
+          alignment: 'left' as const, verticalAlignment: 'top' as const,
+          fontSize: 12, lineHeight: 1, characterSpacing: 0,
+          fontColor: '#000000', backgroundColor: '',
+        },
+        fontKitFont,
+        metadata: { processingStage: 'pre' as const, timestamp: Date.now(), requestId: 'bench' }
+      };
+      
+      for (let i = 0; i < 100; i++) {
+        await extensionManager.executeHook('beforeTextProcessing', testContext);
+      }
+      
+      const extensionEnd = performance.now();
+      const extensionAvgTime = (extensionEnd - extensionStart) / 100;
+      
+      console.log(`  🔌 Extension hook execution: ${extensionAvgTime.toFixed(3)}ms average (100 iterations)`);
+      console.log(`  📊 Active extensions: ${registry.size}, Performance overhead: ${extensionAvgTime > 1 ? 'High' : 'Low'}`);
+    } else {
+      console.log('  🔌 Extension system: No extensions registered for benchmarking');
+    }
+    
+  } catch (error) {
+    console.log('  🔌 Extension system benchmarking not available:', error.message);
   }
 };
