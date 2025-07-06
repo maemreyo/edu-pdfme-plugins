@@ -72,17 +72,55 @@ export const ExtensionDashboard: React.FC<ExtensionDashboardProps> = ({ isOpen, 
   const [diagnostics, setDiagnostics] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [validationResults, setValidationResults] = useState<any>(null);
+  const [demoExtensionsRegistered, setDemoExtensionsRegistered] = useState(false);
 
   const refreshDiagnostics = useCallback(async () => {
     setLoading(true);
     try {
       const diag = await textExtensionSystem.getDiagnostics();
       setDiagnostics(diag);
+      // Check if demo extensions are currently registered
+      const demoExts = diag.extensions.filter((ext: any) => ext.name.startsWith('enhanced-text-transform') || ext.name.startsWith('advanced-ui-enhancement') || ext.name.startsWith('comprehensive-pdf-enhancement') || ext.name.startsWith('advanced-validation') || ext.name.startsWith('performance-monitoring'));
+      setDemoExtensionsRegistered(demoExts.length > 0);
     } catch (error) {
       console.error('Failed to get diagnostics:', error);
     }
     setLoading(false);
   }, []);
+
+  const registerDemoExtensions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await textExtensionSystem.demo.registerAll();
+      if (result.success) {
+        toast.success(`✅ Registered ${result.successful} demo extensions!`);
+        setDemoExtensionsRegistered(true);
+        await refreshDiagnostics();
+      } else {
+        toast.error('❌ Failed to register demo extensions: ' + result.message);
+      }
+    } catch (error) {
+      toast.error('❌ Error registering demo extensions: ' + error.message);
+    }
+    setLoading(false);
+  }, [refreshDiagnostics]);
+
+  const unregisterDemoExtensions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await textExtensionSystem.demo.unregisterAll();
+      if (result.success) {
+        toast.success(`✅ Unregistered ${result.successful} demo extensions!`);
+        setDemoExtensionsRegistered(false);
+        await refreshDiagnostics();
+      } else {
+        toast.error('❌ Failed to unregister demo extensions: ' + result.message);
+      }
+    } catch (error) {
+      toast.error('❌ Error unregistering demo extensions: ' + error.message);
+    }
+    setLoading(false);
+  }, [refreshDiagnostics]);
 
   const runValidation = useCallback(async () => {
     setLoading(true);
@@ -184,8 +222,25 @@ export const ExtensionDashboard: React.FC<ExtensionDashboardProps> = ({ isOpen, 
             disabled={loading}
             className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
           >
-            🧪 Demo Extension
+            🧪 Create Custom Demo
           </button>
+          {!demoExtensionsRegistered ? (
+            <button
+              onClick={registerDemoExtensions}
+              disabled={loading}
+              className="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 disabled:opacity-50"
+            >
+              ➕ Register All Demos
+            </button>
+          ) : (
+            <button
+              onClick={unregisterDemoExtensions}
+              disabled={loading}
+              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+            >
+              ➖ Unregister All Demos
+            </button>
+          )}
         </div>
 
         {/* Extension Summary */}

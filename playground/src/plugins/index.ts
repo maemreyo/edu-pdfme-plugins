@@ -23,6 +23,7 @@ import { signature } from './signature';
 import textSchema, { 
   extensionSystem,
   examples,
+  demo,
   dev,
   features,
   info
@@ -77,6 +78,9 @@ export const textExtensionSystem = {
   // Example extensions
   examples,
   
+  // Demo extensions
+  demo,
+  
   // Initialize with example extensions for playground
   async initializePlayground() {
     try {
@@ -100,19 +104,21 @@ export const textExtensionSystem = {
         }
       }
       
-      // Register example extensions for demonstration
+      // Register example and demo extensions for demonstration
       const registrationResult = await examples.registerAll();
+      const demoRegistrationResult = await demo.registerAll();
       
       // Get final stats
       const stats = await extensionSystem.getStats();
       
-      console.log(`✅ Extension system initialized: ${registrationResult.successful}/${registrationResult.total} extensions registered`);
+      console.log(`✅ Extension system initialized: ${registrationResult.successful + demoRegistrationResult.successful}/${registrationResult.total + demoRegistrationResult.total} extensions registered`);
       
       return {
-        success: registrationResult.success,
+        success: registrationResult.success && demoRegistrationResult.success,
         stats,
         registrationResult,
-        message: `Extension system ready with ${registrationResult.successful}/${registrationResult.total} extensions`
+        demoRegistrationResult,
+        message: `Extension system ready with ${registrationResult.successful + demoRegistrationResult.successful}/${registrationResult.total + demoRegistrationResult.total} extensions`
       };
       
     } catch (error) {
@@ -122,6 +128,16 @@ export const textExtensionSystem = {
         error: error.message,
         message: 'Extension system not available (fallback mode)'
       };
+    }
+  },
+  
+  // Unregister all demo extensions
+  async unregisterAllDemo() {
+    try {
+      const result = await demo.unregisterAll();
+      return { success: true, message: `Successfully unregistered ${result.successful} demo extensions` };
+    } catch (error) {
+      return { success: false, message: 'Failed to unregister demo extensions: ' + error.message };
     }
   },
   

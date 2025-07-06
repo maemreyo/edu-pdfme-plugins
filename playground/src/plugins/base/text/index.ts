@@ -58,6 +58,7 @@ const initializeExtensionSystem = async (): Promise<void> => {
     // Dynamically import extension system to avoid bundle size impact
     const { extensionManager } = await import('./extensions/manager');
     const { registerExampleExtensions } = await import('./extensions/examples');
+    const { registerDemoExtensions } = await import('./extensions/demoExtensions');
     
     // Configure extension manager
     extensionManager.configure({
@@ -68,10 +69,11 @@ const initializeExtensionSystem = async (): Promise<void> => {
       logLevel: 'warn',
     });
     
-    // Register example extensions in development
+    // Register example and demo extensions in development
     if (process.env.NODE_ENV === 'development') {
       await registerExampleExtensions();
-      console.log('🔌 Extension system initialized with example extensions');
+      await registerDemoExtensions(); // Register demo extensions
+      console.log('🔌 Extension system initialized with example and demo extensions');
     } else {
       console.log('🔌 Extension system initialized (production mode)');
     }
@@ -261,6 +263,29 @@ export const examples = {
   async createCustom(name: string) {
     const { createCustomExtension } = await import('./extensions/examples');
     return createCustomExtension(name);
+  },
+};
+
+/**
+ * Demo extensions for comprehensive demonstration
+ */
+export const demo = {
+  // Lazy-load demo extensions
+  async getDemos() {
+    const { demoExtensions } = await import('./extensions/demoExtensions');
+    return demoExtensions;
+  },
+  
+  // Register all demo extensions
+  async registerAll() {
+    const { registerDemoExtensions } = await import('./extensions/demoExtensions');
+    return registerDemoExtensions();
+  },
+  
+  // Unregister all demo extensions
+  async unregisterAll() {
+    const { unregisterDemoExtensions } = await import('./extensions/demoExtensions');
+    return unregisterDemoExtensions();
   },
 };
 
