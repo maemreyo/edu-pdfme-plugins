@@ -4,7 +4,7 @@ import { propPanel } from "./propPanel";
 import { uiRender } from "./uiRender";
 import type { MultiVariableTextSchema } from "./types";
 import { Type } from "lucide";
-import { createSvgStr } from "../../utils";
+import { createSvgStr } from "../utils";
 
 const schema: Plugin<MultiVariableTextSchema> = {
   pdf: pdfRender,

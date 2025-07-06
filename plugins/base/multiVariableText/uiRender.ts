@@ -5,7 +5,7 @@ import {
   buildStyledTextContainer,
   makeElementPlainTextContentEditable,
 } from "../text/uiRender";
-import { isEditable } from "../../utils";
+import { isEditable } from "../utils";
 import { getFontKitFont } from "../text/helper";
 import { substituteVariables } from "./helper";
 

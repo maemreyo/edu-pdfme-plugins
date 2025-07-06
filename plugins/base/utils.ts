@@ -1,9 +1,7 @@
-import type * as CSS from "csstype";
-import { cmyk, degrees, degreesToRadians, rgb, Color } from "@pdfme/pdf-lib";
-import { Schema, mm2pt, Mode, isHexValid, ColorType } from "@pdfme/common";
-import { IconNode } from "lucide";
-import { getDynamicHeightsForTable as _getDynamicHeightsForTable } from "./base/tables/dynamicTemplate";
-
+import type * as CSS from 'csstype';
+import { cmyk, degrees, degreesToRadians, rgb, Color } from '@pdfme/pdf-lib';
+import { Schema, mm2pt, Mode, isHexValid, ColorType } from '@pdfme/common';
+import { IconNode } from 'lucide';
 export const convertForPdfLayoutProps = ({
   schema,
   pageHeight,
@@ -13,13 +11,7 @@ export const convertForPdfLayoutProps = ({
   pageHeight: number;
   applyRotateTranslate?: boolean;
 }) => {
-  const {
-    width: mmWidth,
-    height: mmHeight,
-    position,
-    rotate,
-    opacity,
-  } = schema;
+  const { width: mmWidth, height: mmHeight, position, rotate, opacity } = schema;
   const { x: mmX, y: mmY } = position;
 
   const rotateDegrees = rotate ? -rotate : 0;
@@ -34,10 +26,7 @@ export const convertForPdfLayoutProps = ({
     // The UI performs rotation around the objects center point (the pivot point below),
     // pdflib rotates around the bottom left corner of the object.
     // We must therefore adjust the X and Y by rotating the bottom left corner by this pivot point.
-    const pivotPoint = {
-      x: x + width / 2,
-      y: pageHeight - mm2pt(mmY) - height / 2,
-    };
+    const pivotPoint = { x: x + width / 2, y: pageHeight - mm2pt(mmY) - height / 2 };
     const rotatedPoint = rotatePoint({ x, y }, pivotPoint, rotateDegrees);
     x = rotatedPoint.x;
     y = rotatedPoint.y;
@@ -55,7 +44,7 @@ export const convertForPdfLayoutProps = ({
 export const rotatePoint = (
   point: { x: number; y: number },
   pivot: { x: number; y: number },
-  angleDegrees: number
+  angleDegrees: number,
 ): { x: number; y: number } => {
   const angleRadians = degreesToRadians(angleDegrees);
 
@@ -71,25 +60,24 @@ export const rotatePoint = (
   return { x, y };
 };
 
-export const getDynamicHeightsForTable = _getDynamicHeightsForTable;
 
 // ----------------------------------------
 
 export const addAlphaToHex = (hex: string, alphaPercentage: number) => {
   if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/i.test(hex)) {
-    throw new Error("Invalid HEX color code");
+    throw new Error('Invalid HEX color code');
   }
   const alphaValue = Math.round((alphaPercentage / 100) * 255);
   let alphaHex = alphaValue.toString(16);
-  if (alphaHex.length === 1) alphaHex = "0" + alphaHex;
+  if (alphaHex.length === 1) alphaHex = '0' + alphaHex;
   return hex + alphaHex;
 };
 
 export const isEditable = (mode: Mode, schema: Schema) =>
-  mode === "designer" || (mode === "form" && schema.readOnly !== true);
+  mode === 'designer' || (mode === 'form' && schema.readOnly !== true);
 
 const hex2rgb = (hex: string) => {
-  if (hex.slice(0, 1) === "#") hex = hex.slice(1);
+  if (hex.slice(0, 1) === '#') hex = hex.slice(1);
   if (hex.length === 3)
     hex =
       hex.slice(0, 1) +
@@ -99,9 +87,7 @@ const hex2rgb = (hex: string) => {
       hex.slice(2, 3) +
       hex.slice(2, 3);
 
-  return [hex.slice(0, 2), hex.slice(2, 4), hex.slice(4, 6)].map((str) =>
-    parseInt(str, 16)
-  );
+  return [hex.slice(0, 2), hex.slice(2, 4), hex.slice(4, 6)].map((str) => parseInt(str, 16));
 };
 
 export const hex2RgbColor = (hexString: string | undefined) => {
@@ -129,7 +115,7 @@ const hex2CmykColor = (hexString: string | undefined) => {
     }
 
     // Remove the # if it's present
-    hexString = hexString.replace("#", "");
+    hexString = hexString.replace('#', '');
 
     // Extract the hexadecimal color code and the opacity
     const hexColor = hexString.substring(0, 6);
@@ -158,20 +144,13 @@ const hex2CmykColor = (hexString: string | undefined) => {
   return undefined;
 };
 
-export const hex2PrintingColor = (
-  color?: string | Color,
-  colorType?: ColorType
-) => {
+export const hex2PrintingColor = (color?: string | Color, colorType?: ColorType) => {
   // if color is already CMYK, RGB or Grayscale, does not required to convert
-  if (typeof color === "object") return color;
-  return colorType?.toLowerCase() == "cmyk"
-    ? hex2CmykColor(color)
-    : hex2RgbColor(color);
+  if (typeof color === 'object') return color;
+  return colorType?.toLowerCase() == 'cmyk' ? hex2CmykColor(color) : hex2RgbColor(color);
 };
 
-export const readFile = (
-  input: File | FileList | null
-): Promise<string | ArrayBuffer> =>
+export const readFile = (input: File | FileList | null): Promise<string | ArrayBuffer> =>
   new Promise((resolve, reject) => {
     const fileReader = new FileReader();
 
@@ -182,7 +161,7 @@ export const readFile = (
     };
 
     fileReader.onerror = () => {
-      reject(new Error("[@pdfme/schemas] File reading failed"));
+      reject(new Error('[@pdfme/schemas] File reading failed'));
     };
 
     let file: File | null = null;
@@ -195,43 +174,40 @@ export const readFile = (
     if (file) {
       fileReader.readAsDataURL(file);
     } else {
-      reject(new Error("[@pdfme/schemas] No files provided"));
+      reject(new Error('[@pdfme/schemas] No files provided'));
     }
   });
 
 export const createErrorElm = () => {
-  const container = document.createElement("div");
+  const container = document.createElement('div');
   const containerStyle: CSS.Properties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    height: "100%",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
   };
   Object.assign(container.style, containerStyle);
 
-  const span = document.createElement("span");
+  const span = document.createElement('span');
   const spanStyle: CSS.Properties = {
-    color: "white",
-    background: "red",
-    padding: "0.25rem",
-    fontSize: "12pt",
-    fontWeight: "bold",
-    borderRadius: "2px",
+    color: 'white',
+    background: 'red',
+    padding: '0.25rem',
+    fontSize: '12pt',
+    fontWeight: 'bold',
+    borderRadius: '2px',
     fontFamily: "'Open Sans', sans-serif",
   };
   Object.assign(span.style, spanStyle);
 
-  span.textContent = "ERROR";
+  span.textContent = 'ERROR';
   container.appendChild(span);
 
   return container;
 };
 
-export const createSvgStr = (
-  icon: IconNode,
-  attrs?: Record<string, string>
-): string => {
+export const createSvgStr = (icon: IconNode, attrs?: Record<string, string>): string => {
   // In lucide 0.475.0, the icon is an array of elements, not a single SVG element
   // We need to create an SVG wrapper and add the elements as children
 
@@ -242,22 +218,22 @@ export const createSvgStr = (
 
   // Create default SVG attributes
   const svgAttrs = {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: "24",
-    height: "24",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    "stroke-width": "2",
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
+    xmlns: 'http://www.w3.org/2000/svg',
+    width: '24',
+    height: '24',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    'stroke-width': '2',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
     ...(attrs || {}),
   };
 
   // Format SVG attributes string
   const svgAttrString = Object.entries(svgAttrs)
     .map(([key, value]) => `${key}="${value}"`)
-    .join(" ");
+    .join(' ');
 
   // Helper function to process a single element
   const processElement = (element: unknown): string => {
@@ -268,38 +244,34 @@ export const createSvgStr = (
     const [tag, attributes = {}, children = []] = element as [
       unknown,
       Record<string, string>,
-      unknown[]
+      unknown[],
     ];
     const tagName = String(tag);
 
     // Format attributes string
     const attrString = Object.entries(attributes)
       .map(([key, value]) => `${key}="${value}"`)
-      .join(" ");
+      .join(' ');
 
     // Process children recursively
-    let childrenString = "";
+    let childrenString = '';
 
     if (Array.isArray(children) && children.length > 0) {
-      childrenString = children.map((child) => processElement(child)).join("");
+      childrenString = children.map((child) => processElement(child)).join('');
     }
 
     // Return properly formatted element string
     if (childrenString) {
-      return `<${String(tagName)}${
-        attrString ? " " + String(attrString) : ""
-      }>${childrenString}</${String(tagName)}>`;
+      return `<${String(tagName)}${attrString ? ' ' + String(attrString) : ''}>${childrenString}</${String(tagName)}>`;
     } else {
       // Self-closing tag for empty children
-      return `<${String(tagName)}${
-        attrString ? " " + String(attrString) : ""
-      }/>`;
+      return `<${String(tagName)}${attrString ? ' ' + String(attrString) : ''}/>`;
     }
   };
 
   // Process all elements and join them
   const elementsString = Array.isArray(icon)
-    ? icon.map((element) => processElement(element)).join("")
+    ? icon.map((element) => processElement(element)).join('')
     : processElement(icon);
 
   // Return the complete SVG string
