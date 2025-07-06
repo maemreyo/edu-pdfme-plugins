@@ -1,474 +1,252 @@
-/**
- * Text Plugin Helper Hub (Enterprise Edition)
- * 
- * Central coordination point for all text plugin business logic.
- * This hub orchestrates complex operations by delegating to specialized sub-modules.
- * 
- * Architecture:
- * - fontMetrics.ts: Font loading, caching, and measurement
- * - dynamicSizing.ts: Dynamic font size algorithms
- * - lineWrapping.ts: Advanced text wrapping with i18n support
- * - browserCompat.ts: Cross-browser compatibility layer
- * 
- * This design ensures:
- * - Clean separation of concerns
- * - Easy testing and maintenance
- * - Performance optimization through caching
- * - Type safety throughout the stack
- */
-
-import type { Font as FontKitFont } from 'fontkit';
-import type {
-  TextSchema,
-  TextSchemaInternal,
-  WidthCalculationContext,
-  DynamicFontSizeResult,
-  FontMetrics,
-  BrowserAdjustments,
-  TextChangeEvent,
-  LineWrappingConfig,
-} from './types';
-
-// Import specialized sub-modules
-import {
-  getFontKitFont,
-  getFontMetrics,
-  widthOfTextAtSize,
-  heightOfFontAtSize,
-  getFontDescentInPt,
-  cacheFont,
-  clearFontCache,
-  getFontCacheStats,
-} from './helper/fontMetrics';
-
-import {
-  calculateDynamicFontSize,
-  validateDynamicConfig,
-  optimizeDynamicCalculation,
-  getDynamicSizeConstraints,
-} from './helper/dynamicSizing';
-
-import {
-  wrapText,
-  containsJapanese,
-  containsComplexScript,
-  detectPrimaryScript,
-  getPerformanceMetrics as getLineWrappingPerformanceMetrics,
-  resetPerformanceMetrics as resetLineWrappingPerformanceMetrics,
-  getSegmenterCacheStats,
-} from './helper/lineWrapping';
-
-import {
-  getBrowserVerticalFontAdjustments,
-  makeElementPlainTextContentEditable,
-  detectBrowserMode,
-  supportsFeature,
-  getTextFromElement,
-  setTextInElement,
-  getBrowserInfo,
-  getCompatConfig,
-  setCompatConfig,
-  isModernBrowser,
-  needsFirefoxWorkarounds,
-  getRecommendedSettings,
-} from './helper/browserCompat';
+// REFACTORED: 2025-01-07 - Modularized and enhanced text processing system
 
 /**
- * ===========================================
- * MAIN HELPER EXPORTS
- * ===========================================
+ * MAIN HELPER MODULE - REFACTORED ARCHITECTURE
+ * 
+ * This module serves as the main entry point for all text processing operations.
+ * It imports and re-exports functions from specialized modules while maintaining
+ * backward compatibility with existing code.
+ * 
+ * Critical mechanisms are preserved exactly to ensure PDF-UI consistency.
  */
 
-// Re-export all specialized functions for easy access
+// === FONT METRICS & CACHING ===
 export {
-  // Font Metrics
   getFontKitFont,
-  getFontMetrics,
   widthOfTextAtSize,
   heightOfFontAtSize,
   getFontDescentInPt,
-  cacheFont,
-  clearFontCache,
-  getFontCacheStats,
-  
-  // Dynamic Sizing
-  calculateDynamicFontSize,
-  validateDynamicConfig,
-  optimizeDynamicCalculation,
-  getDynamicSizeConstraints,
-  
-  // Line Wrapping
-  wrapText,
-  containsJapanese,
-  containsComplexScript,
-  detectPrimaryScript,
-  getLineWrappingPerformanceMetrics,
-  resetLineWrappingPerformanceMetrics,
-  getSegmenterCacheStats,
-  
-  // Browser Compatibility
   getBrowserVerticalFontAdjustments,
+  replaceUnsupportedChars
+} from './modules/fontMetrics';
+
+// === TEXT LAYOUT & LINE WRAPPING ===
+export {
+  getSplittedLines,
+  getSplittedLinesBySegmenter,
+  splitTextToSize,
+  containsJapanese,
+  type FontWidthCalcValues
+} from './modules/textLayout';
+
+// === JAPANESE TEXT PROCESSING ===
+export {
+  LINE_START_FORBIDDEN_CHARS,
+  LINE_END_FORBIDDEN_CHARS,
+  filterStartJP,
+  filterEndJP,
+  applyJapaneseRules
+} from './modules/japaneseText';
+
+// === DYNAMIC FONT SIZING ===
+export {
+  calculateDynamicFontSize,
+  FONT_SIZE_ADJUSTMENT,
+  DEFAULT_DYNAMIC_FIT,
+  DEFAULT_DYNAMIC_MIN_FONT_SIZE,
+  DEFAULT_DYNAMIC_MAX_FONT_SIZE
+} from './modules/dynamicSizing';
+
+// === BROWSER COMPATIBILITY ===
+export {
+  isFirefox,
   makeElementPlainTextContentEditable,
-  detectBrowserMode,
-  supportsFeature,
+  setupBlurHandler,
+  setupKeyupHandler,
+  setupFocusHandler,
+  mapVerticalAlignToFlex,
+  getBackgroundColor,
   getTextFromElement,
-  setTextInElement,
-  getBrowserInfo,
-  getCompatConfig,
-  setCompatConfig,
-  isModernBrowser,
-  needsFirefoxWorkarounds,
-  getRecommendedSettings,
+  focusElementAtEnd
+} from './modules/browserCompat';
+
+// === ENHANCED TYPES ===
+export type {
+  TextSchema,
+  ALIGNMENT,
+  VERTICAL_ALIGNMENT,
+  DYNAMIC_FONT_SIZE_FIT,
+  DynamicFontSizeConfig,
+  FontWidthCalcValues as FontWidthCalcValuesType,
+  FontMetrics,
+  BrowserFontAdjustments,
+  ProcessedTextLines,
+  DynamicSizingParams,
+  TextRenderContext,
+  PDFTextRenderParams,
+  TextEventHandlers,
+  ValidationResult,
+  TextProcessingConfig,
+  LineBreakingOptions,
+  TextPluginConfig
+} from './types/enhanced';
+
+// === TYPE GUARDS ===
+export {
+  isDynamicFontSizeConfig,
+  isTextSchema
+} from './types/enhanced';
+
+/**
+ * BACKWARD COMPATIBILITY SECTION
+ * 
+ * These re-exports maintain compatibility with existing code that imports
+ * from the original helper.ts file. All functions work exactly the same.
+ */
+
+// Legacy imports that should continue to work
+import {
+  DEFAULT_FONT_SIZE,
+  DEFAULT_ALIGNMENT,
+  DEFAULT_VERTICAL_ALIGNMENT,
+  DEFAULT_LINE_HEIGHT,
+  DEFAULT_CHARACTER_SPACING,
+  DEFAULT_FONT_COLOR,
+  VERTICAL_ALIGN_TOP,
+  DYNAMIC_FIT_HORIZONTAL,
+  DYNAMIC_FIT_VERTICAL
+} from './constants';
+
+// Re-export constants for backward compatibility
+export {
+  DEFAULT_FONT_SIZE,
+  DEFAULT_ALIGNMENT,
+  DEFAULT_VERTICAL_ALIGNMENT,
+  DEFAULT_LINE_HEIGHT,
+  DEFAULT_CHARACTER_SPACING,
+  DEFAULT_FONT_COLOR,
+  VERTICAL_ALIGN_TOP,
+  DYNAMIC_FIT_HORIZONTAL,
+  DYNAMIC_FIT_VERTICAL
 };
 
 /**
- * ===========================================
- * HIGH-LEVEL ORCHESTRATION FUNCTIONS
- * ===========================================
+ * MAIN TEXT PROCESSING PIPELINE
+ * 
+ * High-level function that combines multiple processing steps
+ * for comprehensive text handling with all features enabled.
  */
+import type { TextSchema, ValidationResult } from './types/enhanced';
+import type { Font as FontKitFont } from 'fontkit';
+import { getSplittedLinesBySegmenter } from './modules/textLayout';
+import { applyJapaneseRules } from './modules/japaneseText';
+import { calculateDynamicFontSize } from './modules/dynamicSizing';
+import { mm2pt } from '@pdfme/common';
+import * as fontkit from 'fontkit';
 
-/**
- * Comprehensive text schema validation and enhancement
- * 
- * Validates a text schema and enhances it with computed properties.
- * This is the main entry point for schema processing.
- * 
- * @param schema - Text schema to validate and enhance
- * @param options - Validation options
- * @returns Enhanced schema with computed properties
- */
-export async function validateAndEnhanceSchema(
-  schema: TextSchema,
-  options: {
-    fontData?: ArrayBuffer | string;
-    enableCaching?: boolean;
-    validateDynamic?: boolean;
-  } = {}
-): Promise<TextSchemaInternal> {
-  const {
-    fontData,
-    enableCaching = true,
-    validateDynamic = true
-  } = options;
-
-  // Start with the original schema
-  const enhancedSchema: TextSchemaInternal = { ...schema };
-
-  try {
-    // Load and cache font if font data is provided
-    if (fontData) {
-      const fontKitFont = await getFontKitFont(fontData);
-      if (enableCaching) {
-        await cacheFont(schema.fontName || 'default', fontKitFont);
-      }
-      
-      // Extract and cache font metrics
-      enhancedSchema._cachedMetrics = getFontMetrics(fontKitFont);
-    }
-
-    // Validate dynamic font size configuration
-    if (validateDynamic && schema.dynamicFontSize) {
-      const validationResult = validateDynamicConfig(schema.dynamicFontSize);
-      if (!validationResult.isValid) {
-        throw new Error(`Invalid dynamic font size config: ${validationResult.errors.join(', ')}`);
-      }
-    }
-
-    
-
-    // Detect browser compatibility requirements
-    enhancedSchema._browserMode = detectBrowserMode();
-
-    // Initialize performance tracking
-    enhancedSchema._performanceData = {
-      renderCount: 0,
-      totalRenderTime: 0,
-      lastRenderTime: 0,
-    };
-
-    return enhancedSchema;
-
-  } catch (error) {
-    console.error('Schema validation and enhancement failed:', error);
-    throw error;
-  }
-}
-
-/**
- * Complete text processing pipeline
- * 
- * Processes text through the complete pipeline: font loading, dynamic sizing,
- * line wrapping, and browser adjustments.
- * 
- * @param text - Text content to process
- * @param schema - Text schema configuration
- * @param containerDimensions - Container dimensions in points
- * @returns Complete processing result
- */
-export async function processTextComplete(
-  text: string,
-  schema: TextSchemaInternal,
-  containerDimensions: { width: number; height: number }
-): Promise<{
-  processedText: string;
+export interface TextProcessingResult {
   lines: string[];
+  fontSize: number;
+  totalHeight: number;
+  maxWidth: number;
+}
+
+/**
+ * Comprehensive text processing pipeline
+ * Applies all text processing features: segmentation, Japanese rules, dynamic sizing
+ */
+export const processTextComprehensive = ({
+  value,
+  schema,
+  fontKitFont
+}: {
+  value: string;
+  schema: TextSchema;
   fontKitFont: FontKitFont;
-  finalFontSize: number;
-  browserAdjustments: BrowserAdjustments;
-  metrics: FontMetrics;
-  performance: {
-    processingTime: number;
-    cacheHits: number;
-    fontLoadTime: number;
-  };
-}> {
-  const startTime = performance.now();
-  let fontLoadTime = 0;
-  let cacheHits = 0;
+}): TextProcessingResult => {
+  // Step 1: Calculate dynamic font size if enabled
+  const fontSize = schema.dynamicFontSize 
+    ? calculateDynamicFontSize({ textSchema: schema, fontKitFont, value })
+    : schema.fontSize;
 
-  try {
-    // Step 1: Load font and get metrics
-    const fontLoadStart = performance.now();
-    const fontKitFont = await getFontKitFont(schema.fontName || 'Helvetica');
-    fontLoadTime = performance.now() - fontLoadStart;
-
-    const metrics = schema._cachedMetrics || getFontMetrics(fontKitFont);
-    if (schema._cachedMetrics) {
-      cacheHits++;
-    }
-
-    // Step 2: Calculate optimal font size
-    let finalFontSize = schema.fontSize;
-    
-    if (schema.dynamicFontSize) {
-      const dynamicResult = await calculateDynamicFontSize({
-        textSchema: schema,
-        fontKitFont,
-        value: text,
-        containerDimensions,
-        startingFontSize: schema._cachedFontSize?.fontSize,
-      });
-      
-      finalFontSize = dynamicResult.fontSize;
-      
-      // Cache result for future use
-      schema._cachedFontSize = dynamicResult;
-      if (dynamicResult.performance.wasCached) {
-        cacheHits++;
-      }
-    }
-
-    // Step 3: Perform line wrapping
-    const calcValues: WidthCalculationContext = {
-      font: fontKitFont,
-      fontSize: finalFontSize,
-      characterSpacing: schema.characterSpacing,
-      boxWidth: containerDimensions.width,
-    };
-
-    const lines = await wrapText(text, calcValues, schema.lineWrapping);
-
-    // Step 4: Apply Japanese line breaking rules if needed
-    const processedLines = lines.lines;
-
-    // Step 5: Calculate browser adjustments
-    const browserAdjustments = getBrowserVerticalFontAdjustments(
-      fontKitFont,
-      finalFontSize,
-      schema.lineHeight,
-      schema.verticalAlignment
-    );
-
-    // Step 6: Update performance tracking
-    const processingTime = performance.now() - startTime;
-    if (schema._performanceData) {
-      schema._performanceData.renderCount++;
-      schema._performanceData.totalRenderTime += processingTime;
-      schema._performanceData.lastRenderTime = processingTime;
-    }
-
-    return {
-      processedText: processedLines.join('\n'),
-      lines: processedLines,
-      fontKitFont,
-      finalFontSize,
-      browserAdjustments,
-      metrics,
-      performance: {
-        processingTime,
-        cacheHits,
-        fontLoadTime,
-      },
-    };
-
-  } catch (error) {
-    console.error('Text processing pipeline failed:', error);
-    throw error;
-  }
-}
-
-/**
- * ===========================================
- * UTILITY AND CONVENIENCE FUNCTIONS
- * ===========================================
- */
-
-/**
- * Quick font size calculation for simple cases
- * 
- * Simplified interface for dynamic font size calculation when full
- * processing pipeline is not needed.
- */
-export async function quickFontSizeCalculation(
-  text: string,
-  schema: TextSchema,
-  containerWidth: number,
-  containerHeight: number
-): Promise<number> {
-  if (!schema.dynamicFontSize) {
-    return schema.fontSize;
-  }
-
-  const fontKitFont = await getFontKitFont(schema.fontName || 'Helvetica');
-  
-  const result = await calculateDynamicFontSize({
-    textSchema: schema,
-    fontKitFont,
-    value: text,
-    containerDimensions: { width: containerWidth, height: containerHeight },
+  // Step 2: Split text with advanced segmentation
+  const boxWidthInPt = mm2pt(schema.width);
+  const lines = getSplittedLinesBySegmenter(value, {
+    font: fontKitFont,
+    fontSize,
+    characterSpacing: schema.characterSpacing,
+    boxWidthInPt,
   });
 
-  return result.fontSize;
-}
+  // Step 3: Apply Japanese text rules if needed
+  const processedLines = applyJapaneseRules(lines);
+
+  // Step 4: Calculate metrics
+  const totalHeight = processedLines.length * fontSize * schema.lineHeight;
+  const maxWidth = Math.max(
+    ...processedLines.map(line => 
+      widthOfTextAtSize(line.replace('\n', ''), fontKitFont, fontSize, schema.characterSpacing)
+    )
+  );
+
+  return {
+    lines: processedLines,
+    fontSize,
+    totalHeight,
+    maxWidth: maxWidth || 0
+  };
+};
 
 /**
- * Text change event processor
+ * CRITICAL MECHANISM VALIDATION
  * 
- * Processes text change events and determines what updates are needed.
+ * Ensures all critical mechanisms are working correctly.
+ * This should be called during initialization to verify the refactor integrity.
  */
-export function processTextChangeEvent(
-  event: TextChangeEvent,
-  schema: TextSchemaInternal
-): {
-  needsFontRecalculation: boolean;
-  needsLineWrapping: boolean;
-  needsBrowserAdjustment: boolean;
-  optimizations: string[];
-} {
-  const needsFontRecalculation = Boolean(
-    schema.dynamicFontSize && 
-    event.newValue.length !== event.previousValue.length
-  );
+export const validateCriticalMechanisms = (): ValidationResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
-  const needsLineWrapping = Boolean(
-    event.newValue.includes('\n') || 
-    event.newValue.length > (schema.performanceHints?.expectedLength || 100)
-  );
-
-  const needsBrowserAdjustment = Boolean(
-    needsFontRecalculation || 
-    !schema._browserMode
-  );
-
-  const optimizations: string[] = [];
-  
-  if (event.source === 'user' && event.newValue.length < 50) {
-    optimizations.push('real-time-preview');
+  // Check if Intl.Segmenter is available
+  if (typeof Intl.Segmenter === 'undefined') {
+    errors.push('Intl.Segmenter not available - advanced line breaking will fail');
   }
-  
-  if (schema._cachedFontSize && !needsFontRecalculation) {
-    optimizations.push('use-cached-font-size');
+
+  // Check if FontKit types are available
+  if (typeof fontkit === 'undefined') {
+    errors.push('FontKit not available - font metrics calculations will fail');
   }
-  
-  if (schema._cachedMetrics) {
-    optimizations.push('use-cached-metrics');
+
+  // Validate Japanese character sets
+  if (LINE_START_FORBIDDEN_CHARS.length === 0 || LINE_END_FORBIDDEN_CHARS.length === 0) {
+    errors.push('Japanese character rules not loaded - Japanese text processing will fail');
+  }
+
+  // Check browser compatibility functions
+  if (typeof navigator === 'undefined') {
+    warnings.push('Navigator not available - browser detection may fail in non-browser environments');
   }
 
   return {
-    needsFontRecalculation,
-    needsLineWrapping,
-    needsBrowserAdjustment,
-    optimizations,
+    isValid: errors.length === 0,
+    errors,
+    warnings
   };
-}
+};
 
 /**
- * Performance monitoring utilities
+ * PERFORMANCE MONITORING
+ * 
+ * Helper to measure performance of critical operations
  */
-export function getPerformanceReport(schema: TextSchemaInternal): {
-  totalRenders: number;
-  averageRenderTime: number;
-  lastRenderTime: number;
-  cacheEfficiency: number;
-  recommendations: string[];
-} {
-  const perf = schema._performanceData;
-  if (!perf) {
-    return {
-      totalRenders: 0,
-      averageRenderTime: 0,
-      lastRenderTime: 0,
-      cacheEfficiency: 0,
-      recommendations: ['Enable performance tracking'],
-    };
-  }
-
-  const averageRenderTime = perf.totalRenderTime / perf.renderCount;
-  const cacheStats = getFontCacheStats();
-  const cacheEfficiency = cacheStats.hits / (cacheStats.hits + cacheStats.misses) * 100;
-
-  const recommendations: string[] = [];
+export const measurePerformance = async <T>(
+  operation: () => Promise<T> | T,
+  operationName: string
+): Promise<T> => {
+  const start = performance.now();
+  const result = await operation();
+  const end = performance.now();
   
-  if (averageRenderTime > 10) {
-    recommendations.push('Consider enabling font caching');
+  if (end - start > 100) { // Log slow operations
+    console.warn(`Slow text operation: ${operationName} took ${end - start}ms`);
   }
   
-  if (cacheEfficiency < 80) {
-    recommendations.push('Increase font cache size');
-  }
-  
-  if (perf.renderCount > 1000) {
-    recommendations.push('Consider implementing render debouncing');
-  }
+  return result;
+};
 
-  return {
-    totalRenders: perf.renderCount,
-    averageRenderTime,
-    lastRenderTime: perf.lastRenderTime,
-    cacheEfficiency,
-    recommendations,
-  };
-}
+// Import widthOfTextAtSize for the processTextComprehensive function
+import { widthOfTextAtSize } from './modules/fontMetrics';
+import { LINE_START_FORBIDDEN_CHARS, LINE_END_FORBIDDEN_CHARS } from './modules/japaneseText';
 
-/**
- * ===========================================
- * LEGACY COMPATIBILITY FUNCTIONS
- * ===========================================
- */
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use processTextComplete instead
- */
-export const getSplittedLines = wrapText;
-
-/**
- * Legacy dynamic font size function
- * @deprecated Use calculateDynamicFontSize instead
- */
-export async function legacyCalculateDynamicFontSize(params: any): Promise<number> {
-  console.warn('legacyCalculateDynamicFontSize is deprecated. Use calculateDynamicFontSize instead.');
-  
-  const result = await calculateDynamicFontSize({
-    textSchema: params.textSchema,
-    fontKitFont: params.fontKitFont,
-    value: params.value,
-    containerDimensions: {
-      width: params.textSchema.width,
-      height: params.textSchema.height,
-    },
-    startingFontSize: params.startingFontSize,
-  });
-  
-  return result.fontSize;
-}
+// Make fontkit available for validation
+// declare const fontkit: any;

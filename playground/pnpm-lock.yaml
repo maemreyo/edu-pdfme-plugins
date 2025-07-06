@@ -41,6 +41,9 @@ importers:
       esbuild:
         specifier: ^0.19.10
         version: 0.19.12
+      fontkit:
+        specifier: ^2.0.4
+        version: 2.0.4
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@18.3.1)
@@ -4800,7 +4803,7 @@ snapshots:
       '@pdfme/schemas': 5.4.0(@pdfme/common@5.4.0(antd@5.26.3(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(form-render@2.5.3(@types/react@18.3.23)(antd@5.26.3(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)))
       '@scena/react-guides': 0.28.2
       antd: 5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      form-render: 2.5.3(@types/react@18.3.23)(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      form-render: 2.5.3(@types/react@18.3.23)(antd@5.26.3(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       globrex: 0.1.2
       hotkeys-js: 3.13.14
       lucide-react: 0.508.0(react@16.14.0)
@@ -6220,7 +6223,7 @@ snapshots:
       hasown: 2.0.2
       mime-types: 2.1.35
 
-  form-render@2.5.3(@types/react@18.3.23)(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  form-render@2.5.3(@types/react@18.3.23)(antd@5.26.3(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
     dependencies:
       '@ant-design/icons': 4.8.3(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       ahooks: 3.9.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -6233,7 +6236,7 @@ snapshots:
       rc-color-picker: 1.2.6(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
-      virtualizedtableforantd4: 1.3.1(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      virtualizedtableforantd4: 1.3.1(antd@5.26.3(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       zustand: 4.5.7(@types/react@18.3.23)(react@16.14.0)
     transitivePeerDependencies:
       - '@types/react'
@@ -8383,7 +8386,7 @@ snapshots:
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
 
-  virtualizedtableforantd4@1.3.1(antd@5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
+  virtualizedtableforantd4@1.3.1(antd@5.26.3(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
     dependencies:
       antd: 5.26.3(date-fns@4.1.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       react: 16.14.0
