@@ -37,7 +37,7 @@ import {
   REALTIME_SIZING_THRESHOLD,
 } from '../constants';
 import { widthOfTextAtSize, heightOfFontAtSize } from './fontMetrics';
-import { getSplittedLinesBySegmenter } from './lineWrapping';
+import { wrapText } from './lineWrapping';
 
 /**
  * ===========================================
@@ -137,20 +137,20 @@ function normalizeDynamicConfig(config: Partial<DynamicFontSizeConfig>): Dynamic
  * @param containerDimensions - Container dimensions in points
  * @returns Constraint calculation result
  */
-function calculateConstraints(
+async function calculateConstraints(
   text: string,
   fontKitFont: FontKitFont,
   fontSize: number,
   schema: TextSchema,
   containerDimensions: { width: number; height: number }
-): {
+): Promise<{
   textWidth: number;
   textHeight: number;
   lineCount: number;
   fitsHorizontally: boolean;
   fitsVertically: boolean;
   overflowRatio: number;
-} {
+}> { {
   const characterSpacing = schema.characterSpacing ?? DEFAULT_CHARACTER_SPACING;
   const lineHeight = schema.lineHeight ?? DEFAULT_LINE_HEIGHT;
 
@@ -237,7 +237,7 @@ async function calculateIterativeSize(
   while (iterations < config.maxIterations) {
     iterations++;
     
-    const constraints = calculateConstraints(
+    const constraints = await calculateConstraints(
       text,
       fontKitFont,
       fontSize,
@@ -257,7 +257,7 @@ async function calculateIterativeSize(
       // Try to grow if we have room
       const nextSize = fontSize + config.precision;
       if (nextSize <= config.max) {
-        const nextConstraints = calculateConstraints(
+        const nextConstraints = await calculateConstraints(
           text,
           fontKitFont,
           nextSize,
@@ -344,7 +344,7 @@ async function calculateBinarySize(
   while (maxSize - minSize > config.precision && iterations < config.maxIterations) {
     iterations++;
     
-    const constraints = calculateConstraints(
+    const constraints = await calculateConstraints(
       text,
       fontKitFont,
       fontSize,
@@ -410,7 +410,7 @@ async function calculateLinearSize(
   const startTime = performance.now();
   
   // Sample at min and max sizes to create linear approximation
-  const minConstraints = calculateConstraints(
+  const minConstraints = await calculateConstraints(
     text,
     fontKitFont,
     config.min,
@@ -418,7 +418,7 @@ async function calculateLinearSize(
     containerDimensions
   );
   
-  const maxConstraints = calculateConstraints(
+  const maxConstraints = await calculateConstraints(
     text,
     fontKitFont,
     config.max,
