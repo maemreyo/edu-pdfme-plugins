@@ -1,6 +1,5 @@
 import {
   multiVariableText,
-  text,
   barcodes,
   image,
   svg,
@@ -16,10 +15,11 @@ import {
   radioGroup,
 } from '@pdfme/schemas';
 import { signature } from './signature';
+import textSchema from './base/text';
 
 export const getPlugins = () => {
   return {
-    Text: text,
+    Text: textSchema,
     'Multi-Variable Text': multiVariableText,
     Table: table,
     Line: line,
