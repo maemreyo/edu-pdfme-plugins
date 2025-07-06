@@ -104,7 +104,10 @@ const getFontProp = ({
 };
 
 /**
- * MAIN PDF RENDER FUNCTION
+ * MAIN PDF RENDER FUNCTION WITH EXTENSION SUPPORT
+ * 
+ * Enhanced PDF rendering with optional extension system integration.
+ * Falls back to original behavior if extensions are not available.
  * 
  * Key Features:
  * - Manual Rich Text Simulation (strikethrough/underline via drawLine)
@@ -113,6 +116,30 @@ const getFontProp = ({
  * - Advanced rotation handling with pivot points
  */
 export const pdfRender = async (arg: PDFRenderProps<TextSchema>) => {
+  // TRY EXTENSION-ENHANCED RENDERING FIRST
+  try {
+    const { enhancePDFRender, areExtensionsEnabled } = await import('./extensions/integration');
+    
+    if (areExtensionsEnabled()) {
+      // Use extension-enhanced rendering
+      await enhancePDFRender(originalPDFRender, arg);
+      return;
+    }
+  } catch (error) {
+    console.debug('Extension system not available for PDF render, using original:', error);
+  }
+  
+  // FALLBACK TO ORIGINAL RENDERING
+  await originalPDFRender(arg);
+};
+
+/**
+ * ORIGINAL PDF RENDER IMPLEMENTATION
+ * 
+ * This is the original implementation that works without extensions.
+ * Kept as a separate function to ensure clean fallback behavior.
+ */
+const originalPDFRender = async (arg: PDFRenderProps<TextSchema>) => {
   const { value, pdfDoc, pdfLib, page, options, schema, _cache } = arg;
   if (!value) return;
 

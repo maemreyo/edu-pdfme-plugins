@@ -41,7 +41,10 @@ import {
 import { isEditable } from '../utils';
 
 /**
- * MAIN UI RENDER FUNCTION
+ * MAIN UI RENDER FUNCTION WITH EXTENSION SUPPORT
+ * 
+ * Enhanced UI rendering with optional extension system integration.
+ * Falls back to original behavior if extensions are not available.
  * 
  * CRITICAL UI Events Handled:
  * - blur: Sync content from contentEditable to schema
@@ -50,6 +53,32 @@ import { isEditable } from '../utils';
  * - focus: Placeholder logic management
  */
 export const uiRender = async (arg: UIRenderProps<TextSchema>) => {
+  // TRY EXTENSION-ENHANCED RENDERING FIRST
+  try {
+    if (typeof window !== 'undefined') {
+      const { enhanceUIRender, areExtensionsEnabled } = await import('./extensions/integration');
+      
+      if (areExtensionsEnabled()) {
+        // Use extension-enhanced rendering
+        await enhanceUIRender(originalUIRender, arg);
+        return;
+      }
+    }
+  } catch (error) {
+    console.debug('Extension system not available for UI render, using original:', error);
+  }
+  
+  // FALLBACK TO ORIGINAL RENDERING
+  await originalUIRender(arg);
+};
+
+/**
+ * ORIGINAL UI RENDER IMPLEMENTATION
+ * 
+ * This is the original implementation that works without extensions.
+ * Kept as a separate function to ensure clean fallback behavior.
+ */
+const originalUIRender = async (arg: UIRenderProps<TextSchema>) => {
   const { value, schema, mode, onChange, stopEditing, tabIndex, placeholder, options, _cache } = arg;
   
   const usePlaceholder = isEditable(mode, schema) && placeholder && !value;
