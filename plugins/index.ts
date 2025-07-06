@@ -17,7 +17,7 @@ import {
 } from "@pdfme/schemas";
 
 // Import custom plugins
-import { customPlugins } from "./custom";
+import { customPlugins, linedAnswerBox } from "./custom";
 
 const builtInPlugins = { Text: text };
 
@@ -66,4 +66,15 @@ export const allPlugins = {
   checkbox,
   // Custom plugins
   ...customPlugins,
+};
+
+/**
+ * Educational plugins specifically
+ * Usage: import { educationalPlugins } from './plugins'
+ */
+export const educationalPlugins = {
+  fillInTheBlank: customPlugins.fillInTheBlank,
+  linedAnswerBox: customPlugins.linedAnswerBox,
+  multipleChoiceQuestion: customPlugins.multipleChoiceQuestion,
+  calloutBox: customPlugins.calloutBox,
 };

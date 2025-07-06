@@ -1,489 +1,319 @@
-/**
- * USAGE EXAMPLES: Callout Block Composition
- * 
- * This file demonstrates how to integrate callout blocks into
- * educational documents and UI applications using pdfme composition.
- */
 
-import { 
-  createCalloutBlock, 
-  createPresetCalloutBlock,
-  createSubjectCallout,
-  createLessonCallouts,
-  findCalloutBlocks,
-  removeCalloutBlock,
-  updateCalloutContent,
-  type CalloutType,
-  type CalloutBlockOptions 
-} from '../utils/blockComposers';
+// Example: How to use the CalloutBox Plugin
 
-// ============================================================================
-// EXAMPLE 1: Basic Callout Usage in Educational Content
-// ============================================================================
+import { calloutBox } from '../plugins/custom';
+import type { CalloutBoxSchema, CalloutType } from '../plugins/custom/calloutBox/types';
+import { EDUCATIONAL_ICONS, CALLOUT_TYPE_CONFIGS } from '../plugins/custom/calloutBox/types';
 
 /**
- * Create different types of callouts for a math lesson
+ * Example 1: Basic Tip Callout Box
  */
-function createMathLessonCallouts() {
-  const position = { x: 20, y: 30 };
-  const spacing = 20;
-  let currentY = position.y;
+const tipCalloutExample: CalloutBoxSchema = {
+  type: 'calloutBox',
+  id: 'tip_1',
+  name: 'tip_1',
+  position: { x: 20, y: 30 },
+  width: 150,
+  height: 40, // Will auto-adjust based on content
   
-  const callouts = [];
+  // Content
+  icon: EDUCATIONAL_ICONS.lightbulb,
+  title: 'Study Tip',
+  body: 'Remember to review your notes within 24 hours of taking them for better retention!',
   
-  // Definition callout
-  callouts.push(createCalloutBlock({
-    position: { x: position.x, y: currentY },
-    type: 'definition',
-    title: 'Định nghĩa: Phân số',
-    content: 'Phân số là một số được biểu diễn dưới dạng a/b, trong đó a là tử số và b là mẫu số (b ≠ 0).',
-    width: 160
-  }));
-  currentY += 70;
+  // Visual styling
+  backgroundColor: '#f6ffed',
+  borderColor: '#b7eb8f',
+  borderWidth: 1,
+  radius: 4,
   
-  // Tip callout
-  callouts.push(createCalloutBlock({
-    position: { x: position.x, y: currentY },
-    type: 'tip',
-    title: 'Mẹo tính toán',
-    content: 'Khi cộng hai phân số, hãy quy đồng mẫu số trước khi thực hiện phép cộng.',
-    width: 160
-  }));
-  currentY += 60;
-  
-  // Warning callout
-  callouts.push(createCalloutBlock({
-    position: { x: position.x, y: currentY },
-    type: 'warning',
-    title: 'Lưu ý quan trọng',
-    content: 'Mẫu số của phân số không bao giờ được bằng 0. Điều này sẽ làm cho phân số không có nghĩa.',
-    width: 160
-  }));
-  currentY += 65;
-  
-  // Example callout
-  callouts.push(createCalloutBlock({
-    position: { x: position.x, y: currentY },
-    type: 'example',
-    title: 'Ví dụ thực tế',
-    content: 'Nếu bạn ăn 3/8 chiếc bánh pizza và bạn bè ăn 2/8, tổng cộng các bạn đã ăn 5/8 chiếc pizza.',
-    width: 160
-  }));
-  
-  return callouts;
-}
-
-// ============================================================================
-// EXAMPLE 2: Creating Complete Lesson Templates
-// ============================================================================
-
-/**
- * Create a complete science lesson with multiple callout types
- */
-function createScienceLessonTemplate() {
-  const template = {
-    basePdf: { width: 210, height: 297 }, // A4 size
-    schemas: [] as any[]
-  };
-  
-  // Lesson title
-  template.schemas.push({
-    id: 'lesson_title',
-    type: 'text',
-    position: { x: 20, y: 15 },
-    width: 170,
-    height: 12,
-    content: 'Bài học: Chu trình nước trong tự nhiên',
-    fontSize: 16,
+  // Text styles
+  titleStyle: {
+    fontSize: 12,
+    fontColor: '#389e0d',
     fontName: 'Helvetica-Bold',
-    textAlignment: 'center'
-  });
+  },
+  bodyStyle: {
+    fontSize: 10,
+    fontColor: '#237804',
+    fontName: 'Helvetica',
+  },
   
-  // Create lesson callouts using the helper function
-  const lessonCallouts = createLessonCallouts(
-    { x: 20, y: 40 },
-    {
-      objective: 'Hiểu được quá trình tuần hoàn của nước trong tự nhiên và các yếu tố ảnh hưởng.',
-      keyPoints: [
-        'Nước bay hơi từ đại dương, sông, hồ tạo thành hơi nước.',
-        'Hơi nước ngưng tụ thành mây trong khí quyển.',
-        'Mưa, tuyết rơi xuống bổ sung nước cho đất liền.'
-      ],
-      examples: [
-        'Khi phơi quần áo, nước trong vải bay hơi vào không khí.',
-        'Sương mai xuất hiện khi hơi nước ngưng tụ vào ban đêm.'
-      ],
-      warnings: [
-        'Ô nhiễm có thể làm gián đoạn chu trình nước tự nhiên.',
-        'Biến đổi khí hậu ảnh hưởng đến lượng mưa và bay hơi.'
-      ]
-    }
-  );
+  // Layout
+  layout: {
+    padding: 8,
+    iconSize: 5,
+    spacingAfterIcon: 4,
+    spacingAfterTitle: 6,
+  },
   
-  // Add all callout schemas to template
-  lessonCallouts.forEach(callout => {
-    template.schemas.push(...callout.schemas);
-  });
-  
-  return template;
-}
-
-// ============================================================================
-// EXAMPLE 3: Subject-Specific Callouts
-// ============================================================================
-
-/**
- * Create subject-specific callouts for different academic areas
- */
-function createSubjectSpecificCallouts() {
-  const subjects = ['math', 'science', 'history', 'language'] as const;
-  const startPosition = { x: 25, y: 30 };
-  const columns = 2;
-  const columnWidth = 85;
-  const rowHeight = 80;
-  
-  return subjects.map((subject, index) => {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-    
-    return createSubjectCallout(subject, {
-      x: startPosition.x + (column * columnWidth),
-      y: startPosition.y + (row * rowHeight)
-    });
-  });
-}
-
-// ============================================================================
-// EXAMPLE 4: UI Integration Functions
-// ============================================================================
-
-/**
- * Function to add callout via UI button click
- * (For integration with Docubrand interface)
- */
-function handleAddCallout(
-  designer: any,
-  clickPosition: { x: number; y: number },
-  calloutType: CalloutType = 'note'
-) {
-  try {
-    const callout = createPresetCalloutBlock(
-      calloutType,
-      clickPosition,
-      'Nhập nội dung callout tại đây...',
-      undefined // Use preset title
-    );
-
-    // Get current template
-    const currentTemplate = designer.getTemplate();
-    
-    // Add new schemas to template
-    const newTemplate = {
-      ...currentTemplate,
-      schemas: [...currentTemplate.schemas, ...callout.schemas]
-    };
-    
-    // Update the designer
-    designer.updateTemplate(newTemplate);
-    
-    console.log(`Added ${calloutType} callout with group ID: ${callout.groupId}`);
-    return callout.groupId;
-    
-  } catch (error) {
-    console.error('Failed to add callout:', error);
-    alert('Error adding callout: ' + error.message);
-    return null;
-  }
-}
-
-/**
- * Batch create multiple callouts for lesson planning
- */
-function createLessonPlan(
-  designer: any,
-  lessonData: {
-    title: string;
-    sections: Array<{
-      type: CalloutType;
-      title: string;
-      content: string;
-    }>;
-  }
-) {
-  const template = designer.getTemplate();
-  let currentY = 40; // Start below title
-  const leftMargin = 20;
-  const sectionSpacing = 15;
-  
-  // Add lesson title
-  const titleSchema = {
-    id: `lesson_title_${Date.now()}`,
-    type: 'text',
-    position: { x: leftMargin, y: 15 },
-    width: 170,
-    height: 15,
-    content: lessonData.title,
-    fontSize: 14,
-    fontName: 'Helvetica-Bold',
-    textAlignment: 'center'
-  };
-  
-  const newSchemas = [titleSchema];
-  
-  // Add each section as a callout
-  lessonData.sections.forEach((section, index) => {
-    const callout = createCalloutBlock({
-      position: { x: leftMargin, y: currentY },
-      type: section.type,
-      title: section.title,
-      content: section.content,
-      width: 160
-    });
-    
-    newSchemas.push(...callout.schemas);
-    currentY += callout.dimensions.height + sectionSpacing;
-  });
-  
-  // Update template
-  designer.updateTemplate({
-    ...template,
-    schemas: [...template.schemas, ...newSchemas]
-  });
-  
-  console.log(`Created lesson plan with ${lessonData.sections.length} sections`);
-}
-
-// ============================================================================
-// EXAMPLE 5: React Component Integration
-// ============================================================================
-
-/**
- * React component for callout configuration dialog
- */
-/*
-interface CalloutDialogProps {
-  onAddCallout: (config: CalloutBlockOptions) => void;
-  onCancel: () => void;
-}
-
-export const CalloutDialog: React.FC<CalloutDialogProps> = ({
-  onAddCallout,
-  onCancel
-}) => {
-  const [config, setConfig] = useState<Partial<CalloutBlockOptions>>({
-    type: 'note',
-    title: '',
-    content: '',
-    width: 160
-  });
-
-  const calloutTypes: { value: CalloutType; label: string; description: string }[] = [
-    { value: 'tip', label: 'Mẹo hay', description: 'Chia sẻ mẹo học tập hữu ích' },
-    { value: 'warning', label: 'Lưu ý', description: 'Cảnh báo về lỗi thường gặp' },
-    { value: 'definition', label: 'Định nghĩa', description: 'Giải thích khái niệm quan trọng' },
-    { value: 'note', label: 'Ghi chú', description: 'Thông tin bổ sung' },
-    { value: 'important', label: 'Quan trọng', description: 'Điểm cần nhấn mạnh' },
-    { value: 'example', label: 'Ví dụ', description: 'Minh họa cụ thể' }
-  ];
-
-  const handleSubmit = () => {
-    if (!config.title?.trim()) {
-      alert('Vui lòng nhập tiêu đề');
-      return;
-    }
-    
-    if (!config.content?.trim()) {
-      alert('Vui lòng nhập nội dung');
-      return;
-    }
-
-    onAddCallout(config as CalloutBlockOptions);
-  };
-
-  return (
-    <div className="dialog">
-      <h3>Thêm Callout Block</h3>
-      
-      <div className="form-group">
-        <label>Loại Callout:</label>
-        <select 
-          value={config.type}
-          onChange={(e) => setConfig(prev => ({
-            ...prev,
-            type: e.target.value as CalloutType
-          }))}
-        >
-          {calloutTypes.map(type => (
-            <option key={type.value} value={type.value}>
-              {type.label} - {type.description}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label>Tiêu đề:</label>
-        <input
-          type="text"
-          value={config.title || ''}
-          onChange={(e) => setConfig(prev => ({
-            ...prev,
-            title: e.target.value
-          }))}
-          placeholder="Nhập tiêu đề..."
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Nội dung:</label>
-        <textarea
-          value={config.content || ''}
-          onChange={(e) => setConfig(prev => ({
-            ...prev,
-            content: e.target.value
-          }))}
-          placeholder="Nhập nội dung chi tiết..."
-          rows={4}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Chiều rộng (mm):</label>
-        <input
-          type="number"
-          value={config.width || 160}
-          onChange={(e) => setConfig(prev => ({
-            ...prev,
-            width: Number(e.target.value)
-          }))}
-          min="80"
-          max="200"
-        />
-      </div>
-
-      <div className="dialog-actions">
-        <button onClick={handleSubmit}>Thêm Callout</button>
-        <button onClick={onCancel}>Hủy</button>
-      </div>
-    </div>
-  );
+  calloutType: 'tip',
+  readOnly: false,
 };
-*/
-
-// ============================================================================
-// EXAMPLE 6: Advanced Template Management
-// ============================================================================
 
 /**
- * Organize callouts in a multi-column layout
+ * Example 2: Warning Callout with Custom Content
  */
-function createMultiColumnCalloutLayout() {
-  const template = {
-    basePdf: { width: 210, height: 297 },
-    schemas: [] as any[]
+const warningCalloutExample: CalloutBoxSchema = {
+  type: 'calloutBox',
+  id: 'warning_1',
+  name: 'warning_1',
+  position: { x: 20, y: 100 },
+  width: 160,
+  height: 50,
+  
+  icon: EDUCATIONAL_ICONS.alert,
+  title: 'Important Warning',
+  body: 'Always wear safety goggles when conducting chemistry experiments. Chemical splashes can cause serious eye injuries.',
+  
+  backgroundColor: '#fff7e6',
+  borderColor: '#ffd591',
+  borderWidth: 2,
+  radius: 6,
+  
+  titleStyle: {
+    fontSize: 13,
+    fontColor: '#d46b08',
+    fontName: 'Helvetica-Bold',
+  },
+  bodyStyle: {
+    fontSize: 11,
+    fontColor: '#ad4e00',
+    fontName: 'Helvetica',
+  },
+  
+  layout: {
+    padding: 10,
+    iconSize: 6,
+    spacingAfterIcon: 5,
+    spacingAfterTitle: 8,
+  },
+  
+  calloutType: 'warning',
+  readOnly: false,
+};
+
+/**
+ * Example 3: Definition Box for Educational Content
+ */
+const definitionCalloutExample: CalloutBoxSchema = {
+  type: 'calloutBox',
+  id: 'definition_1',
+  name: 'definition_1',
+  position: { x: 20, y: 180 },
+  width: 140,
+  height: 45,
+  
+  icon: EDUCATIONAL_ICONS.book,
+  title: 'Definition',
+  body: 'Photosynthesis: The process by which green plants use sunlight to synthesize nutrients from carbon dioxide and water.',
+  
+  backgroundColor: '#f9f0ff',
+  borderColor: '#d3adf7',
+  borderWidth: 1,
+  radius: 4,
+  
+  titleStyle: {
+    fontSize: 12,
+    fontColor: '#531dab',
+    fontName: 'Helvetica-Bold',
+  },
+  bodyStyle: {
+    fontSize: 10,
+    fontColor: '#391085',
+    fontName: 'Helvetica',
+  },
+  
+  layout: {
+    padding: 8,
+    iconSize: 5,
+    spacingAfterIcon: 4,
+    spacingAfterTitle: 6,
+  },
+  
+  calloutType: 'definition',
+  readOnly: false,
+};
+
+/**
+ * Example 4: Using with pdfme Template
+ */
+const educationalWorksheetTemplate = {
+  basePdf: 'data:application/pdf;base64,...', // Your base PDF
+  schemas: [
+    // Main content areas
+    {
+      type: 'text',
+      id: 'main_title',
+      position: { x: 20, y: 20 },
+      width: 170,
+      height: 15,
+      content: 'Biology Worksheet: Plant Processes',
+      fontSize: 16,
+      fontName: 'Helvetica-Bold',
+    },
+
+    // Educational callouts
+    tipCalloutExample,
+    warningCalloutExample,
+    definitionCalloutExample,
+
+    // Multiple choice question
+    {
+      type: 'multipleChoiceQuestion',
+      id: 'mcq_1',
+      position: { x: 20, y: 250 },
+      width: 160,
+      height: 70,
+      question: 'Which organelle is responsible for photosynthesis?',
+      choices: [
+        { id: 'a', text: 'Nucleus' },
+        { id: 'b', text: 'Chloroplast' },
+        { id: 'c', text: 'Mitochondria' },
+        { id: 'd', text: 'Ribosome' },
+      ],
+      correctAnswerId: 'b',
+    },
+  ],
+};
+
+/**
+ * Example 5: Programmatic Callout Creation
+ */
+function createInfoCallout(
+  position: { x: number; y: number },
+  title: string,
+  content: string,
+  width: number = 150
+): CalloutBoxSchema {
+  return {
+    type: 'calloutBox',
+    id: `info_${Date.now()}`,
+    name: `info_${Date.now()}`,
+    position,
+    width,
+    height: 40, // Will auto-adjust
+    
+    ...CALLOUT_TYPE_CONFIGS.info, // Apply info preset
+    
+    title,
+    body: content,
+    
+    layout: {
+      padding: 8,
+      iconSize: 5,
+      spacingAfterIcon: 4,
+      spacingAfterTitle: 6,
+    },
+    
+    readOnly: false,
   };
-  
-  const leftColumn = { x: 15, y: 30, width: 85 };
-  const rightColumn = { x: 110, y: 30, width: 85 };
-  
-  // Left column - definitions and concepts
-  const leftCallouts = [
-    { type: 'definition' as CalloutType, title: 'Khái niệm 1', content: 'Định nghĩa chi tiết về khái niệm đầu tiên...' },
-    { type: 'definition' as CalloutType, title: 'Khái niệm 2', content: 'Định nghĩa chi tiết về khái niệm thứ hai...' }
-  ];
-  
-  // Right column - tips and examples
-  const rightCallouts = [
-    { type: 'tip' as CalloutType, title: 'Mẹo học', content: 'Cách ghi nhớ hiệu quả các khái niệm này...' },
-    { type: 'example' as CalloutType, title: 'Ví dụ áp dụng', content: 'Ví dụ cụ thể về cách sử dụng trong thực tế...' }
-  ];
-  
-  let leftY = leftColumn.y;
-  let rightY = rightColumn.y;
-  
-  // Add left column callouts
-  leftCallouts.forEach(calloutData => {
-    const callout = createCalloutBlock({
-      position: { x: leftColumn.x, y: leftY },
-      type: calloutData.type,
-      title: calloutData.title,
-      content: calloutData.content,
-      width: leftColumn.width
-    });
-    template.schemas.push(...callout.schemas);
-    leftY += callout.dimensions.height + 15;
-  });
-  
-  // Add right column callouts
-  rightCallouts.forEach(calloutData => {
-    const callout = createCalloutBlock({
-      position: { x: rightColumn.x, y: rightY },
-      type: calloutData.type,
-      title: calloutData.title,
-      content: calloutData.content,
-      width: rightColumn.width
-    });
-    template.schemas.push(...callout.schemas);
-    rightY += callout.dimensions.height + 15;
-  });
-  
-  return template;
 }
 
 /**
- * Update existing callouts in a template
+ * Example 6: Dynamic Callout Type Application
  */
-function updateCalloutInTemplate(
-  designer: any,
-  groupId: string,
-  newContent: { title?: string; content?: string }
-) {
-  const currentTemplate = designer.getTemplate();
-  const updatedSchemas = updateCalloutContent(
-    currentTemplate.schemas,
-    groupId,
-    newContent
-  );
+function applyCalloutType(schema: CalloutBoxSchema, type: CalloutType): CalloutBoxSchema {
+  const typeConfig = CALLOUT_TYPE_CONFIGS[type];
   
-  designer.updateTemplate({
-    ...currentTemplate,
-    schemas: updatedSchemas
-  });
-  
-  console.log(`Updated callout ${groupId}:`, newContent);
+  return {
+    ...schema,
+    ...typeConfig,
+    calloutType: type,
+    titleStyle: {
+      ...schema.titleStyle,
+      ...typeConfig.titleStyle,
+    },
+    bodyStyle: {
+      ...schema.bodyStyle,
+      ...typeConfig.bodyStyle,
+    },
+  };
 }
 
 /**
- * Clear all callouts from template
+ * Example 7: Using with pdfme Designer
  */
-function clearAllCallouts(designer: any) {
-  const currentTemplate = designer.getTemplate();
-  const calloutGroupIds = findCalloutBlocks(currentTemplate.schemas);
-  
-  let updatedSchemas = currentTemplate.schemas;
-  calloutGroupIds.forEach(groupId => {
-    updatedSchemas = removeCalloutBlock(updatedSchemas, groupId);
-  });
-  
-  designer.updateTemplate({
-    ...currentTemplate,
-    schemas: updatedSchemas
-  });
-  
-  console.log(`Removed ${calloutGroupIds.length} callout blocks`);
-}
+import { Designer } from '@pdfme/ui';
 
-// ============================================================================
-// EXPORT ALL EXAMPLES
-// ============================================================================
+const plugins = {
+  calloutBox,
+  // ... other plugins
+};
+
+const designer = new Designer({
+  domContainer: document.getElementById('designer-container'),
+  template: educationalWorksheetTemplate,
+  plugins,
+});
+
+/**
+ * Example 8: Custom Icon Integration
+ */
+const customIconCallout: CalloutBoxSchema = {
+  type: 'calloutBox',
+  id: 'custom_icon',
+  name: 'custom_icon',
+  position: { x: 20, y: 60 },
+  width: 140,
+  height: 35,
+  
+  // Custom SVG icon
+  icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+  </svg>`,
+  
+  title: 'Star Fact',
+  body: 'Did you know that our Sun is actually a medium-sized star?',
+  
+  backgroundColor: '#fff7e6',
+  borderColor: '#ffb347',
+  borderWidth: 1,
+  radius: 3,
+  
+  titleStyle: {
+    fontSize: 11,
+    fontColor: '#cc7a00',
+    fontName: 'Helvetica-Bold',
+  },
+  bodyStyle: {
+    fontSize: 9,
+    fontColor: '#996600',
+    fontName: 'Helvetica',
+  },
+  
+  layout: {
+    padding: 6,
+    iconSize: 4,
+    spacingAfterIcon: 3,
+    spacingAfterTitle: 4,
+  },
+  
+  readOnly: false,
+};
+
+/**
+ * Example 9: PDF Generation with Callouts
+ */
+import { generate } from '@pdfme/generator';
+
+const generateEducationalPDF = async () => {
+  const pdf = await generate({
+    template: educationalWorksheetTemplate,
+    inputs: [{}], // No form inputs needed for callouts
+    plugins: { calloutBox },
+  });
+  
+  return pdf; // Returns Uint8Array of PDF
+};
 
 export {
-  createMathLessonCallouts,
-  createScienceLessonTemplate,
-  createSubjectSpecificCallouts,
-  handleAddCallout,
-  createLessonPlan,
-  createMultiColumnCalloutLayout,
-  updateCalloutInTemplate,
-  clearAllCallouts
+  tipCalloutExample,
+  warningCalloutExample,
+  definitionCalloutExample,
+  educationalWorksheetTemplate,
+  createInfoCallout,
+  applyCalloutType,
+  customIconCallout,
+  generateEducationalPDF,
 };

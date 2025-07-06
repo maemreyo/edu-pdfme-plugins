@@ -1,23 +1,13 @@
 import { Plugin, Schema } from "@pdfme/common";
-import { Circle, CircleDot } from "lucide";
 import svg from "../graphics/svg";
-import { isEditable, createSvgStr } from "../../utils";
+import { isEditable } from "../../utils";
 import { HEX_COLOR_PATTERN } from "../../constants";
+import { getCheckedIcon, getIcon } from "./utils";
 
-const defaultStroke = "currentColor";
-
-const getCheckedIcon = (stroke = defaultStroke) =>
-  createSvgStr(CircleDot, { stroke });
-const getUncheckedIcon = (stroke = defaultStroke) =>
-  createSvgStr(Circle, { stroke });
-
-interface RadioGroup extends Schema {
+export interface RadioGroup extends Schema {
   group: string;
   color: string;
 }
-
-const getIcon = ({ value, color }: { value: string; color: string }) =>
-  value === "true" ? getCheckedIcon(color) : getUncheckedIcon(color);
 
 const eventEmitter = new EventTarget();
 
@@ -81,12 +71,11 @@ const schema: Plugin<RadioGroup> = {
 
     rootElement.appendChild(container);
   },
-  pdf: (arg) =>
-    svg.pdf(
-      Object.assign(arg, {
-        value: getIcon({ value: arg.value, color: arg.schema.color }),
-      })
-    ),
+  pdf: (arg) => {
+    // Import the pdfRender function dynamically to avoid circular dependencies
+    const { pdfRender } = require('./pdfRender');
+    return pdfRender(arg);
+  },
   propPanel: {
     schema: ({ i18n }) => ({
       color: {
